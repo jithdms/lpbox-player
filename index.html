@@ -1,0 +1,2042 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>LP BOX</title>
+<script>
+/* ====== 계정 기능 설정 (SETUP.md 참고) ======
+   Firebase 콘솔에서 복사한 firebaseConfig 값을 아래에 붙여넣으세요.
+   비워 두면 로그인 없이 지금처럼 동작해요. 이 값은 공개돼도 괜찮은 값이에요. */
+window.LPBOX_FIREBASE = {
+  apiKey: "AIzaSyChHsUFRfpjD6L2BbwooucBYI_MzY32vAY",
+  authDomain: "lpbox-398c4.firebaseapp.com",
+  projectId: "lpbox-398c4",
+  appId: "1:570382381372:web:14b57ab80ddb0afbed6e39"
+};
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@400;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+@font-face{font-family:"JoseonGulim";src:url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_20-04@1.0/ChosunGu.woff") format("woff");font-weight:normal;font-display:swap}
+@font-face{font-family:"JejuStoneWall";src:url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2210-EF@1.0/EF_jejudoldam.woff2") format("woff2");font-weight:normal;font-display:swap}
+@font-face{font-family:"BusanDandiHandwriting";src:url("https://cdn.jsdelivr.net/gh/Project-Noonnu/2610132210@font-342/font-342/%EB%B6%80%EC%82%B0%EB%8B%A8%EB%94%94%EC%86%90%EA%B8%80%EC%94%A8.woff2") format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Kkakdugi Drafting";src:url("fonts/KkakdugiDrafting-Regular.woff2") format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Kkakdugi Drafting";src:url("fonts/KkakdugiDrafting-Bold.woff2") format("woff2");font-weight:700;font-display:swap}
+/* Layout: turntable deck on top (sleeve + platter + draggable tonearm + track info), the 3D record crate below,
+   then the owner's record manager and design panel. Every color below is a token the design panel rewrites. */
+:root{
+  --bg:#FFFFFF; --ink:#151515; --accent:#151515; --accent-ink:#FFFFFF;
+  --tt:#FFFFFF; --tt-ink:#151515; --vinyl:#111111; --box:#FFFFFF; --hl:#FFE45C; --hl-ink:#2B2620;
+  --sub:color-mix(in srgb,var(--ink) 50%,var(--bg));
+  --line:color-mix(in srgb,var(--ink) 9%,var(--bg));
+  --soft:color-mix(in srgb,var(--ink) 4%,var(--bg));
+  --f-display:"Hahmlet","IBM Plex Sans KR",Georgia,serif; --dw:700; --dz:1;
+  --f-body:"IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif; --bz:1;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:calc(15px * var(--bz));line-height:1.55;-webkit-font-smoothing:antialiased;word-break:keep-all;overflow-wrap:break-word;
+  transition:background-color .5s,color .5s;
+  padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px));
+  padding-block:calc(env(safe-area-inset-top,0px) + 56px) calc(env(safe-area-inset-bottom,0px) + 64px)}
+.page{max-width:1040px;margin:0 auto;display:grid;gap:28px}
+.page>*{animation:rise .8s cubic-bezier(.2,.7,.2,1) both}
+.page>*:nth-child(2){animation-delay:.08s}.page>*:nth-child(3){animation-delay:.16s}.page>*:nth-child(4){animation-delay:.24s}.page>*:nth-child(5){animation-delay:.32s}.page>*:nth-child(n+6){animation-delay:.4s}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+[hidden]{display:none!important}
+
+/* header */
+.top{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.brand{font-family:var(--f-mono);font-size:11px;letter-spacing:.22em;color:var(--sub)}
+.top h1{font-family:var(--f-display);font-weight:var(--dw);font-size:calc(clamp(26px,4.4vw,38px) * var(--dz));line-height:1.15;margin:2px 0 0;text-wrap:balance}
+.top .by{color:var(--sub);font-size:14px}
+.top .grow{flex:1;min-width:0}
+.btn{border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:9px 16px;border-radius:999px;cursor:pointer;font-size:14px;font-weight:500;white-space:nowrap;transition:border-color .2s,transform .15s,background-color .3s}
+.btn:hover{border-color:var(--ink)}
+.btn:active{transform:scale(.97)}
+.btn.dark{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.dark:hover{opacity:.88}
+.btn.sm{padding:6px 12px;font-size:13px}
+.banner,.warn{border:1px solid var(--line);border-radius:14px;padding:12px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:14px;background:var(--soft)}
+.banner b{font-weight:600}
+.banner .grow,.warn .grow{flex:1;min-width:0}
+
+/* deck */
+.deck{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:36px;align-items:center}
+@media (max-width:780px){.deck{grid-template-columns:minmax(0,1fr);gap:20px}}
+/* enlarged deck: the turntable gets the full width, the progress bar and controls move underneath */
+.deck.big{grid-template-columns:minmax(0,1fr);gap:56px}
+.deck.big .visual{width:100%;max-width:820px;margin:0 auto;padding-bottom:12px}
+.deck.big .tt{width:62%}
+.deck.big .visual.has .cover{width:38%}
+.deck.big .glow{left:43.1%}
+.deck.big .visual.has .glow{left:58.1%}
+.deck.big .info{width:100%;max-width:640px;margin:0 auto}
+/* player-only screen: everything but the deck is hidden and the deck is fitted to the window */
+.focus-btn{width:40px;height:40px;flex:none}
+.focus-exit{position:fixed;top:calc(env(safe-area-inset-top,0px) + 14px);right:calc(env(safe-area-inset-right,0px) + 14px);z-index:40}
+body.focus{padding-block:calc(env(safe-area-inset-top,0px) + 12px) calc(env(safe-area-inset-bottom,0px) + 12px);
+  padding-left:max(clamp(20px,7vw,140px),env(safe-area-inset-left,0px));padding-right:max(clamp(20px,7vw,140px),env(safe-area-inset-right,0px))}
+body.focus .page{gap:0;max-width:1240px}
+body.focus .page>*:not(.deck){display:none!important}
+body.focus .deck{min-height:calc(100vh - 24px);min-height:calc(100dvh - 24px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
+  grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:clamp(20px,4vw,56px);align-content:center}
+body.focus .deck .visual{width:min(100%,calc((100dvh - 120px) * 1.9));max-width:none;margin:0 auto;padding-bottom:0}
+body.focus .deck .tt{width:66%}
+body.focus .deck .visual.has .cover{width:34%}
+body.focus .deck .glow{left:42.6%}
+body.focus .deck .visual.has .glow{left:55.6%}
+body.focus .deck .info{width:100%;max-width:none;margin:0}
+body.focus .zoom,body.focus .tt-cap,body.focus .marker{display:none}
+@media (max-aspect-ratio:1/1){
+  body.focus .deck{grid-template-columns:minmax(0,1fr);gap:24px}
+  body.focus .deck .visual{width:min(100%,calc((100dvh - 400px) * 1.6));min-width:min(100%,260px)}
+  body.focus .deck .tt{width:80%}
+  body.focus .deck .visual.has .cover{width:28%}
+  body.focus .deck .glow{left:41.1%}
+  body.focus .deck .visual.has .glow{left:51.1%}
+  body.focus .deck .info{max-width:560px;margin:0 auto}
+}
+/* phone held upright but the browser can't lock landscape (iPhone): turn the player sideways ourselves */
+body.fakeland{padding:0;overflow:hidden}
+body.fakeland .page{position:fixed;top:0;left:0;width:100vh;width:100dvh;height:100vw;max-width:none;margin:0;display:block;overflow:hidden;
+  transform-origin:0 0;transform:translateX(100vw) rotate(90deg);padding:12px max(28px,5vh)}
+body.fakeland .deck{min-height:0;height:100%;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:24px;align-content:center}
+body.fakeland .deck .visual{width:min(100%,calc((100vw - 60px) * 1.9));min-width:0;margin:0 auto}
+body.fakeland .deck .tt{width:66%}
+body.fakeland .deck .visual.has .cover{width:34%}
+body.fakeland .deck .glow{left:42.6%}
+body.fakeland .deck .visual.has .glow{left:55.6%}
+body.fakeland .deck .info{max-width:none;margin:0;gap:10px}
+body.fakeland .toast,body.fakeland .toast.show{left:calc(env(safe-area-inset-left,0px) + 44px);top:50%;bottom:auto;transform:translate(-50%,-50%) rotate(90deg)}
+.zoom{position:absolute;right:3%;bottom:4%;z-index:6;width:28px;height:28px;border-radius:8px;border:1px solid color-mix(in srgb,var(--tt-ink) 16%,var(--tt));
+  background:color-mix(in srgb,var(--tt) 92%,var(--tt-ink));color:var(--tt-ink);display:grid;place-items:center;cursor:pointer;padding:0;transition:transform .15s,background-color .2s}
+.zoom:hover{transform:scale(1.08)}
+.zoom svg{width:15px;height:15px}
+::view-transition-group(*){animation-duration:.5s;animation-timing-function:cubic-bezier(.3,.7,.2,1)}
+.visual{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;position:relative}
+.glow{position:absolute;left:42.6%;top:44%;width:96%;aspect-ratio:1;transform:translate(-50%,-50%) scale(.8);border-radius:50%;pointer-events:none;z-index:0;
+  background:radial-gradient(circle,hsl(var(--gh,220) 90% 62% / .78),hsl(calc(var(--gh,220) + 40) 90% 70% / .35) 45%,transparent 66%);filter:blur(34px);opacity:0;transition:opacity 1.2s,left .7s cubic-bezier(.3,.7,.2,1)}
+.visual.has .glow{left:55.6%}
+body.playing[data-fx="glow"] .glow,body.playing[data-fx="both"] .glow{opacity:1;animation:breathe 3.4s ease-in-out infinite alternate}
+@keyframes breathe{from{transform:translate(-50%,-50%) scale(.78)}to{transform:translate(-50%,-50%) scale(1.12)}}
+/* sound rings leaving the record, and the sleeve nodding along */
+.fx-ring{position:absolute;border-radius:50%;border:2px solid hsl(var(--gh,220) 75% 55% / .55);pointer-events:none;animation:ring 2.2s cubic-bezier(.2,.6,.3,1) forwards}
+@keyframes ring{from{transform:scale(1);opacity:.85}to{transform:scale(1.45);opacity:0}}
+body.playing:not([data-fx="none"]) .visual.has .cover{animation:nod 1.8s ease-in-out infinite}
+@keyframes nod{0%,100%{transform:rotate(-3deg) translateY(0)}50%{transform:rotate(-2deg) translateY(-6px)}}
+.fx{position:absolute;inset:0;pointer-events:none;z-index:6;overflow:visible}
+.fx-note{position:absolute;font-size:22px;color:var(--accent);opacity:0;animation:float 3.4s cubic-bezier(.2,.6,.3,1) forwards;font-family:system-ui,sans-serif;font-weight:700;
+  text-shadow:0 2px 6px rgba(0,0,0,.15)}
+@keyframes float{0%{opacity:0;transform:translate(0,0) scale(.5) rotate(0)}12%{opacity:1}70%{opacity:.85}100%{opacity:0;transform:translate(var(--nx),var(--ny,-230px)) scale(1.35) rotate(var(--nr))}}
+.cover{position:relative;z-index:3;flex:none;width:0;aspect-ratio:1;margin-right:0;margin-bottom:-4%;transform:rotate(-3deg) translateX(40%);transform-origin:bottom left;opacity:0;
+  box-shadow:0 14px 30px -12px rgba(0,0,0,.35),0 2px 4px rgba(0,0,0,.08);background:var(--soft);
+  transition:width .65s cubic-bezier(.3,.7,.2,1),margin .65s cubic-bezier(.3,.7,.2,1),transform .65s cubic-bezier(.3,.7,.2,1),opacity .35s}
+.visual.has .cover{width:34%;margin-right:-8%;opacity:1;transform:rotate(-3deg)}
+.visual .cover.empty{opacity:0}
+.cover .art{width:100%;height:100%}
+.tt-cap{flex:0 0 100%;margin-top:22px;text-align:center;font-size:13px;color:var(--sub);min-height:1.5em}
+
+.tt{container-type:inline-size;position:relative;z-index:1;flex:none;width:66%;aspect-ratio:1.3;border-radius:16px;
+  background:linear-gradient(180deg,var(--tt),color-mix(in srgb,var(--tt) 95%,#000));border:1px solid color-mix(in srgb,var(--tt) 88%,#000);
+  box-shadow:0 30px 50px -30px rgba(0,0,0,.32),0 1px 0 rgba(255,255,255,.6) inset;transition:background .5s,border-color .5s}
+.platter{position:absolute;height:88%;aspect-ratio:1;left:5%;top:6%;border-radius:50%;background:radial-gradient(circle,#2a2a2a 0 60%,#1d1d1d 61% 100%);box-shadow:0 2px 0 rgba(255,255,255,.4),0 0 0 1px rgba(0,0,0,.12)}
+.record{position:absolute;inset:2.5%;border-radius:50%;z-index:1}
+.record.off{visibility:hidden}
+.disc{position:absolute;inset:0;border-radius:50%;
+  background:
+    radial-gradient(circle,transparent 0 33%,rgba(255,255,255,.06) 33.4%,transparent 34%,transparent 63%,rgba(255,255,255,.07) 63.3%,transparent 63.8%),
+    repeating-radial-gradient(circle,color-mix(in srgb,var(--vinyl) 90%,#000) 0 1.2px,color-mix(in srgb,var(--vinyl) 93%,#fff) 1.6px 2.4px),var(--vinyl)}
+.label{position:absolute;inset:31%;border-radius:50%;overflow:hidden;box-shadow:0 0 0 2px color-mix(in srgb,var(--vinyl) 70%,#000)}
+.label .art{width:100%;height:100%}
+.label .fb{display:none}
+.sheen{position:absolute;inset:0;border-radius:50%;pointer-events:none;
+  background:conic-gradient(from 30deg,transparent 0 8%,rgba(255,255,255,.14) 13%,transparent 19%,transparent 52%,rgba(255,255,255,.1) 57%,transparent 63%)}
+.spindle{position:absolute;left:50%;top:50%;width:3.2%;height:3.2%;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,#bdbdbd 60%,#8a8a8a);z-index:2}
+.pivot{position:absolute;left:80.5%;top:7%;width:12%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 40% 35%,#fff,#ececec 55%,#cfcfcd);border:1px solid rgba(0,0,0,.12);z-index:4}
+.arm{position:absolute;left:86.5%;top:13%;width:1.6%;height:66%;margin-left:-.8%;transform-origin:50% 0;transform:rotate(4deg);
+  transition:transform 1s cubic-bezier(.5,0,.2,1),filter .2s;z-index:5;background:linear-gradient(90deg,#cfcfcd,#fafafa 45%,#c6c6c4);border-radius:6px;
+  filter:drop-shadow(2px 3px 3px rgba(0,0,0,.2));cursor:grab;touch-action:none}
+.arm::before{content:"";position:absolute;left:-260%;right:-260%;top:8%;bottom:-14%}
+@media (pointer:coarse){.arm::before{left:-700%;right:-300%;bottom:-22%}}   /* a fingertip-sized handle on phones */
+.arm::after{content:"";position:absolute;bottom:-6%;left:50%;width:420%;height:13%;transform:translateX(-62%) rotate(-24deg);background:#2b2b2b;border-radius:2px 2px 4px 4px}
+.arm.track{transition:transform .3s linear}
+.arm.instant{transition:none}
+.arm.drag{cursor:grabbing;filter:drop-shadow(7px 12px 8px rgba(0,0,0,.25))}
+.arm:focus-visible{outline-offset:6px}
+.tt.hint .arm{animation:nudge 1.8s ease-in-out 2}
+@keyframes nudge{0%,100%{translate:0 0}40%{translate:-3px 2px}}
+.speed{position:absolute;z-index:6;right:calc(4.5% + 34px);bottom:5%;display:flex;gap:4px;align-items:center;font-family:var(--f-mono);font-size:10px;color:color-mix(in srgb,var(--tt-ink) 55%,var(--tt));letter-spacing:.06em}
+/* small turntables (phones): speed controls stack above the zoom button so the LED never sits on the record */
+@container (max-width:430px){
+  .speed{right:3%;bottom:calc(4% + 30px);flex-direction:column;align-items:flex-end;gap:3px;font-size:9px}
+  .speed .led{margin:0 3px 0 0}
+  .speed .rpm-l,.speed .rpm[aria-pressed="false"]{display:none}
+  .zoom{width:24px;height:24px;border-radius:7px}
+  .zoom svg{width:13px;height:13px}
+}
+.speed .led{width:6px;height:6px;border-radius:50%;background:color-mix(in srgb,var(--tt-ink) 20%,var(--tt));margin-right:6px;transition:background .3s,box-shadow .3s}
+.tt.on .speed .led{background:#FF4D3A;box-shadow:0 0 8px rgba(255,77,58,.7)}
+.rpm{border:0;background:none;padding:2px 3px;font:inherit;color:inherit;cursor:pointer;border-radius:3px}
+.rpm[aria-pressed="true"]{color:var(--tt-ink);font-weight:500}
+
+.info{display:grid;gap:14px;min-width:0}
+.now-k{font-family:var(--f-mono);font-size:11px;letter-spacing:.18em;color:var(--sub);display:flex;align-items:center;gap:8px}
+.eq{display:inline-flex;gap:2px;height:10px;align-items:flex-end;opacity:0;transition:opacity .3s}
+.eq i{width:2px;height:30%;background:var(--accent);border-radius:1px}
+body.playing .eq{opacity:1}
+body.playing .eq i{animation:eq .8s ease-in-out infinite alternate}
+.eq i:nth-child(2){animation-delay:-.3s!important}.eq i:nth-child(3){animation-delay:-.55s!important}.eq i:nth-child(4){animation-delay:-.15s!important}
+@keyframes eq{from{height:20%}to{height:100%}}
+.now-t{font-family:var(--f-display);font-weight:var(--dw);font-size:calc(clamp(22px,3vw,30px) * var(--dz));line-height:1.2;overflow-wrap:anywhere;text-wrap:balance}
+.now-t.swap{animation:swapIn .6s cubic-bezier(.2,.7,.2,1)}
+@keyframes swapIn{from{opacity:0;transform:translateY(10px);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}
+.now-a{color:var(--sub);font-size:15px;margin-top:2px;overflow-wrap:anywhere}
+.bar{position:relative;height:26px;cursor:pointer;touch-action:none}
+.bar .track{position:absolute;left:0;right:0;top:11px;height:4px;border-radius:2px;background:var(--line)}
+.bar .fill{position:absolute;left:0;top:11px;height:4px;border-radius:2px;background:var(--accent);width:0}
+.bar .mark{position:absolute;top:4px;height:18px;background:var(--hl);border-radius:3px 6px 4px 7px;transform:skewX(-8deg);opacity:.95;min-width:3px}
+.bar .knob{position:absolute;top:7px;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:var(--accent);left:0;box-shadow:0 0 0 3px var(--bg)}
+.times{display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:12px;color:var(--sub);font-variant-numeric:tabular-nums;margin-top:-6px}
+.ctrls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ib{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--bg);color:var(--ink);display:grid;place-items:center;cursor:pointer;transition:border-color .2s,transform .15s}
+.ib:hover{border-color:var(--ink)}
+.ib:active{transform:scale(.94)}
+.ib.big{width:54px;height:54px;background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.ib svg{width:18px;height:18px}
+.ib.big svg{width:22px;height:22px}
+.hlpill{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:var(--hl);color:var(--hl-ink);border:0;font-size:13px;font-weight:600;cursor:pointer}
+.hlpill:disabled{background:var(--soft);color:var(--sub);cursor:default}
+.hlpill .tm{font-family:var(--f-mono);font-weight:500;font-variant-numeric:tabular-nums}
+.toggle{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--sub);cursor:pointer;border:0;background:none;padding:4px 0}
+.toggle i{width:30px;height:18px;border-radius:9px;background:color-mix(in srgb,var(--ink) 18%,var(--bg));position:relative;transition:background .2s}
+.toggle i::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .2s}
+.toggle[aria-pressed="true"]{color:var(--ink)}
+.toggle[aria-pressed="true"] i{background:var(--accent)}
+.toggle[aria-pressed="true"] i::after{transform:translateX(12px)}
+.marker{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:12px;border-radius:12px;background:var(--soft)}
+.marker .lbl{font-size:13px;font-weight:600;margin-right:auto;display:flex;align-items:center;gap:6px}
+@media (max-width:560px){.marker .lbl{flex-basis:100%}.marker .btn{flex:1}}
+.marker .lbl::before{content:"";width:14px;height:8px;background:var(--hl);border-radius:2px 4px 2px 4px;transform:skewX(-8deg)}
+.err{font-size:13px;color:#D23B3B}
+.err a{color:inherit}
+.vid{display:flex;gap:12px;align-items:center}
+.vid.off,body.land .vid{position:fixed;left:-10000px;top:0;opacity:0;pointer-events:none}
+.vbox{width:132px;aspect-ratio:16/9;border-radius:8px;overflow:hidden;background:var(--soft);flex:none}
+.vbox iframe,.vbox>div{width:100%;height:100%;display:block;border:0}
+.vmeta{min-width:0;display:grid;gap:3px}
+.vmeta b{font-size:14px;font-weight:600;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:anywhere}
+.vmeta span{font-size:12px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* crate */
+.crate-sec{display:grid;gap:8px}
+.sec-h{display:flex;align-items:baseline;gap:10px}
+.sec-h h2{font-family:var(--f-display);font-size:calc(20px * var(--dz));font-weight:var(--dw);margin:0}
+.sec-h span{color:var(--sub);font-size:13px}
+.stage{position:relative;overflow-x:clip;margin-top:28px;height:var(--stageH,430px);perspective:1300px;perspective-origin:50% 20%;outline:none;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.stage::after{content:"";position:absolute;left:50%;bottom:4%;width:calc(var(--W) * 1.5);height:40px;transform:translateX(-50%);background:radial-gradient(ellipse at center,rgba(0,0,0,.14),transparent 70%);z-index:-1}
+.world{position:absolute;left:50%;top:61%;width:0;height:0;transform-style:preserve-3d;
+  transform:rotateX(-24deg) rotateY(-34deg) scale(.92);transition:transform 1.5s cubic-bezier(.6,0,.2,1)}
+.world.open{transform:rotateX(-20deg) rotateY(0deg) scale(1)}
+.world{pointer-events:none}
+.world .sleeve{pointer-events:auto}
+/* the shelf as boxes: the open box in the middle, neighbours parked at the sides, all sliding together */
+.carousel,#minis{position:absolute;inset:0;transform-style:preserve-3d;pointer-events:none}
+.world.mini-w{transition:transform .5s cubic-bezier(.3,.7,.2,1)}
+.world.mini-w .face,.world.mini-w .flap{pointer-events:auto;cursor:pointer}
+.world.mini-w.ghost .face,.world.mini-w.ghost .flap{background:transparent!important;border:1.5px dashed color-mix(in srgb,var(--ink) 30%,var(--bg))}
+.world.mini-w.ghost .face.front{display:flex;align-items:center;justify-content:center;color:var(--sub);font-weight:600;font-size:calc(var(--W) * .09)}
+.boxnav{position:absolute;top:46%;z-index:3;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:color-mix(in srgb,var(--bg) 85%,transparent);
+  color:var(--ink);display:grid;place-items:center;cursor:pointer;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);transition:transform .15s,border-color .2s}
+.boxnav:hover{border-color:var(--ink);transform:scale(1.06)}
+.boxnav svg{width:16px;height:16px}
+#boxPrev{left:4px}#boxNext{right:4px}
+.boxdots{display:flex;justify-content:center;align-items:center;gap:6px;min-height:14px;flex-wrap:wrap}
+.boxdots button{width:7px;height:7px;border-radius:50%;border:0;padding:0;background:color-mix(in srgb,var(--ink) 22%,var(--bg));cursor:pointer;transition:width .25s,background-color .25s}
+.boxdots button[aria-current="true"]{width:20px;border-radius:4px;background:var(--accent)}
+.boxdots .more{font-size:11px;color:var(--sub);font-family:var(--f-mono)}
+.world>*{position:absolute;left:0;top:0}
+.face{background:var(--box);border:1px solid color-mix(in srgb,var(--box) 86%,#000);backface-visibility:visible;transition:background-color .5s}
+.face.front{width:var(--W);height:var(--H);margin:calc(var(--H)/-2) 0 0 calc(var(--W)/-2);transform:translateZ(calc(var(--D)/2));
+  background:linear-gradient(180deg,var(--box),color-mix(in srgb,var(--box) 96%,#000));display:flex;align-items:center;justify-content:center;overflow:hidden}
+.face.back{width:var(--W);height:var(--H);margin:calc(var(--H)/-2) 0 0 calc(var(--W)/-2);transform:rotateY(180deg) translateZ(calc(var(--D)/2));background:color-mix(in srgb,var(--box) 94%,#000)}
+.face.left{width:var(--D);height:var(--H);margin:calc(var(--H)/-2) 0 0 calc(var(--D)/-2);transform:rotateY(-90deg) translateZ(calc(var(--W)/2));background:color-mix(in srgb,var(--box) 93%,#000)}
+.face.right{width:var(--D);height:var(--H);margin:calc(var(--H)/-2) 0 0 calc(var(--D)/-2);transform:rotateY(90deg) translateZ(calc(var(--W)/2));background:color-mix(in srgb,var(--box) 90%,#000)}
+.face.bottom{width:var(--W);height:var(--D);margin:calc(var(--D)/-2) 0 0 calc(var(--W)/-2);transform:rotateX(-90deg) translateZ(calc(var(--H)/2));background:color-mix(in srgb,var(--box) 88%,#000)}
+.tag{position:relative;z-index:1;width:72%;border:1px solid rgba(0,0,0,.1);border-radius:calc(var(--W) * .016);background:color-mix(in srgb,var(--box) 25%,#fff);padding:calc(var(--W) * .032) calc(var(--W) * .04);text-align:center;color:#151515}
+.tag.off{display:none}
+.tag b{display:block;font-family:var(--f-display);font-size:calc(var(--W) * .066 * var(--dz));font-weight:var(--dw);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tag span{display:block;font-family:var(--f-mono);font-size:calc(var(--W) * .038);letter-spacing:.16em;color:#777;margin-top:.3em}
+/* stickers: positions in % of the box front, sizes in % of its width, so the flat editor and the 3D box match */
+.stks{position:absolute;inset:0;z-index:2;pointer-events:none}
+.stk{position:absolute;transform:translate(-50%,-50%) rotate(var(--r,0deg));line-height:0;user-select:none;-webkit-user-select:none}
+.stk svg{display:block;width:100%;height:auto;overflow:visible;
+  filter:drop-shadow(1.6px 0 0 #fff) drop-shadow(-1.6px 0 0 #fff) drop-shadow(0 1.6px 0 #fff) drop-shadow(0 -1.6px 0 #fff) drop-shadow(0 2px 2px rgba(0,0,0,.22))}
+.stk.ph{filter:drop-shadow(0 2px 3px rgba(0,0,0,.25))}
+.stk.ph img{display:block;width:100%;aspect-ratio:1;object-fit:cover;pointer-events:none;-webkit-user-drag:none}
+.stk.ph.sh0 img{border-radius:50%;border:calc(var(--W) * .009) solid #fff}
+.stk.ph.sh1{background:#fff;padding:6% 6% 24%}
+.stk.ph.sh2 img{border-radius:6%;border:calc(var(--W) * .009) solid #fff}
+.stk.ph{--bw:calc(var(--W) * .007)}
+.stk.ph.sh3 img{aspect-ratio:auto;height:auto;object-fit:contain}
+/* cut-out photos (transparent PNG/WebP): the white edge follows the picture's own outline */
+.stk.ph.sh3:not(.nb) img{filter:drop-shadow(var(--bw) 0 0 #fff) drop-shadow(calc(var(--bw) * -1) 0 0 #fff) drop-shadow(0 var(--bw) 0 #fff) drop-shadow(0 calc(var(--bw) * -1) 0 #fff)}
+.stk.ph.nb img{border:0}
+.stk.ph.sh1.nb{background:none;padding:0}
+.bopts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.bopt{border:1px solid var(--line);border-radius:14px;background:var(--bg);color:var(--ink);padding:12px;cursor:pointer;display:grid;gap:10px;justify-items:center;font-size:14px;font-weight:500;transition:border-color .2s,transform .15s}
+.bopt:hover{border-color:var(--accent);transform:translateY(-2px)}
+.bprevbox{position:relative;width:100%;aspect-ratio:1.3;border-radius:8px;display:grid;place-items:center;overflow:hidden;--W:220px;
+  background:linear-gradient(180deg,var(--box),color-mix(in srgb,var(--box) 94%,#000));border:1px solid color-mix(in srgb,var(--box) 86%,#000)}
+.bprevbox .stk{position:relative;left:auto;top:auto;transform:none;width:58%}
+.stk.txt{line-height:1.15;padding:.28em .6em;border-radius:.45em;white-space:nowrap;font-family:var(--f-display);font-weight:var(--dw);box-shadow:0 0 0 .13em #fff,0 .12em .3em rgba(0,0,0,.25)}
+.flap{background:color-mix(in srgb,var(--box) 98%,#000);border:1px solid color-mix(in srgb,var(--box) 86%,#000);transform-origin:50% 0;transition:transform .9s cubic-bezier(.55,0,.25,1),background-color .5s}
+.flap.f,.flap.b{width:var(--W);height:calc(var(--D)/2);margin-left:calc(var(--W)/-2)}
+.flap.l,.flap.r{width:var(--D);height:calc(var(--W)/2);margin-left:calc(var(--D)/-2);background:color-mix(in srgb,var(--box) 95%,#000)}
+.flap.f{transform:translate3d(0,calc(var(--H)/-2),calc(var(--D)/2)) rotateX(-90deg)}
+.flap.b{transform:translate3d(0,calc(var(--H)/-2),calc(var(--D)/-2)) rotateX(90deg)}
+.flap.l{transform:translate3d(calc(var(--W)/-2),calc(var(--H)/-2 + 1px),0) rotateY(90deg) rotateX(90deg)}
+.flap.r{transform:translate3d(calc(var(--W)/2),calc(var(--H)/-2 + 1px),0) rotateY(90deg) rotateX(-90deg)}
+.world.open .flap.f{transform:translate3d(0,calc(var(--H)/-2),calc(var(--D)/2)) rotateX(-212deg)}
+.world.open .flap.b{transform:translate3d(0,calc(var(--H)/-2),calc(var(--D)/-2)) rotateX(212deg)}
+.world.open .flap.l{transform:translate3d(calc(var(--W)/-2),calc(var(--H)/-2 + 1px),0) rotateY(90deg) rotateX(205deg);transition-delay:.35s}
+.world.open .flap.r{transform:translate3d(calc(var(--W)/2),calc(var(--H)/-2 + 1px),0) rotateY(90deg) rotateX(-205deg);transition-delay:.35s}
+.sleeves{transform-style:preserve-3d}
+.sleeve{position:absolute;width:var(--S);height:var(--S);margin:calc(var(--S)/-2) 0 0 calc(var(--S)/-2);transform-origin:50% 100%;
+  transition:transform .55s cubic-bezier(.3,.7,.2,1),opacity .5s;cursor:pointer}
+.sleeve.away{pointer-events:none}
+.world.intro .sleeve{transition-delay:calc(var(--i) * 70ms + .9s)}
+.card{position:absolute;inset:0;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.08);transition:transform .3s cubic-bezier(.3,.7,.2,1)}
+.card .art{position:absolute;inset:0}
+.sleeve.cur:hover .card{transform:translateY(-8%)}
+.sleeve.taken .card{opacity:.3}
+.sleeve .hype{position:absolute;top:6%;right:6%;width:30%;aspect-ratio:1;border-radius:50%;background:var(--hl);color:var(--hl-ink);display:grid;place-content:center;text-align:center;
+  font-family:var(--f-mono);font-size:calc(var(--S) * .045);line-height:1.15;font-weight:500;box-shadow:0 1px 3px rgba(0,0,0,.2);transform:rotate(10deg)}
+.sleeve .hype b{font-family:var(--f-body);font-weight:700;font-size:calc(var(--S) * .05);letter-spacing:.04em}
+.sleeve .playing-tag{position:absolute;left:6%;top:6%;font-family:var(--f-mono);font-size:calc(var(--S) * .05);background:var(--accent);color:var(--accent-ink);padding:2px 7px;border-radius:999px}
+.crate-nav{display:grid;grid-template-columns:42px minmax(0,360px) 42px auto;align-items:center;gap:12px;justify-content:center}
+.crate-nav .pick{text-align:center;min-width:0}
+@media (max-width:560px){.crate-nav{grid-template-columns:42px minmax(0,1fr) 42px}.crate-nav #pickBtn{grid-column:1/-1;justify-self:center}}
+.crate-nav .pick b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crate-nav .pick span{color:var(--sub);font-size:13px;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.hint{text-align:center;color:var(--sub);font-size:13px}
+
+/* art + fallback cover */
+.art{position:relative;overflow:hidden;background:hsl(var(--h) 38% 90%)}
+.art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scale(1.34)}
+.art img.wide{transform:none}   /* maxres thumbnails are true 16:9, no letterbox bars to crop */
+.fb{position:absolute;inset:0;padding:9%;display:flex;flex-direction:column;justify-content:flex-end;gap:2px;color:hsl(var(--h) 30% 22%)}
+.fb::before{content:"";position:absolute;right:-18%;top:-18%;width:70%;aspect-ratio:1;border-radius:50%;background:hsl(var(--h) 45% 80%)}
+.fb b{position:relative;font-family:var(--f-display);font-weight:var(--dw);font-size:1.05em;line-height:1.2;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+.fb i{position:relative;font-style:normal;font-size:.78em;opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sleeve .fb{font-size:calc(var(--S) * .085)}
+.cover .fb{font-size:clamp(11px,2vw,16px)}
+.fly{position:fixed;z-index:50;transform-origin:0 0;pointer-events:none;box-shadow:0 20px 40px -10px rgba(0,0,0,.35)}
+.fly .art{position:absolute;inset:0}
+.fly .fb{font-size:16px}
+
+/* intro + link blocks (link-in-bio style) */
+.intro{margin:10px 0 0;font-size:15px;line-height:1.65;max-width:62ch;white-space:pre-wrap;color:color-mix(in srgb,var(--ink) 78%,var(--bg))}
+.links{width:100%;max-width:560px;margin:0 auto;display:grid;gap:12px}
+.blk-text{margin:0;white-space:pre-wrap;line-height:1.7;text-align:center;color:color-mix(in srgb,var(--ink) 82%,var(--bg))}
+.blk-link{display:grid;gap:2px;text-align:center;text-decoration:none;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:13px 22px;
+  transition:transform .15s,box-shadow .15s,background-color .3s,border-color .2s}
+.blk-link:hover{border-color:var(--ink);transform:translateY(-1px)}
+.blk-link:active{transform:translateY(1px)}
+/* button looks, picked in the design panel (body[data-bs]) */
+body[data-bs="pop"] .btn,body[data-bs="pop"] .blk-link{border:1.5px solid var(--ink);box-shadow:0 3px 0 var(--ink)}
+body[data-bs="pop"] .btn:hover,body[data-bs="pop"] .blk-link:hover{transform:translateY(-1px);box-shadow:0 4px 0 var(--ink)}
+body[data-bs="pop"] .btn:active,body[data-bs="pop"] .blk-link:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+body[data-bs="pop"] .btn.dark{border-color:var(--ink)}
+body[data-bs="fill"] .btn{border-color:transparent;background:var(--soft)}
+body[data-bs="fill"] .btn:hover{border-color:transparent;background:color-mix(in srgb,var(--ink) 9%,var(--bg))}
+body[data-bs="fill"] .btn.dark,body[data-bs="fill"] .blk-link{border-color:transparent;background:var(--accent);color:var(--accent-ink)}
+body[data-bs="fill"] .blk-link span{color:inherit;opacity:.72}
+body[data-bs="fill"] .blk-link:hover{opacity:.9}
+body[data-bs="square"] .btn,body[data-bs="square"] .blk-link{border-radius:6px;border:1.5px solid var(--ink)}
+body[data-bs="square"] .btn.dark{border-color:var(--accent)}
+body[data-bs="soft"] .btn,body[data-bs="soft"] .blk-link{border-color:transparent;border-radius:14px;box-shadow:0 6px 18px -8px rgba(0,0,0,.28),0 1px 2px rgba(0,0,0,.06)}
+body[data-bs="soft"] .btn:hover,body[data-bs="soft"] .blk-link:hover{border-color:transparent;transform:translateY(-1px);box-shadow:0 10px 22px -8px rgba(0,0,0,.3)}
+body[data-bs="soft"] .btn.dark{border-color:transparent}
+.bprev{display:inline-block;padding:5px 12px;font-size:13px;font-weight:500;color:var(--ink);background:var(--bg);white-space:nowrap}
+.blk-link b{font-weight:600;overflow-wrap:anywhere}
+.blk-link span{font-size:12px;color:var(--sub);font-family:var(--f-mono)}
+.blk-space{display:block}
+.space-ed{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--sub)}
+.space-ed input[type=range]{flex:1 1 160px;accent-color:var(--accent)}
+.space-ed output{font-family:var(--f-mono);font-variant-numeric:tabular-nums;min-width:48px}
+.space-bar{flex:0 0 100%;border:1.5px dashed var(--line);border-radius:6px;transition:height .15s}
+.blk-img{display:block;width:100%;max-width:100%;height:auto;border-radius:16px;box-shadow:0 10px 30px -18px rgba(0,0,0,.4)}
+.made{display:flex;justify-content:center;padding-top:12px}
+body:not(.shared) .shared-only{display:none!important}
+/* block + sticker editors */
+.bedit{display:grid;gap:8px}
+.brow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:start;padding:10px;border:1px solid var(--line);border-radius:12px;animation:rise .35s both}
+.brow .kind{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;color:var(--sub);padding-top:10px;width:34px}
+.brow .bf{display:grid;gap:6px;min-width:0}
+.brow textarea{resize:none;height:84px;line-height:1.5;font-size:14px}
+.brow .in{font-size:14px;padding:8px 10px}
+.brow img{width:120px;max-width:100%;border-radius:8px;display:block}
+.addrow{display:flex;gap:8px;flex-wrap:wrap}
+.sheet.wide{width:min(720px,100%);max-height:calc(100vh - 40px);max-height:calc(100dvh - 40px);overflow:auto;display:flex;flex-direction:column}
+.sheet.wide>*{flex:none}
+.stk-face{position:relative;width:100%;align-self:center;border-radius:6px;overflow:hidden;touch-action:none;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(180deg,var(--box),color-mix(in srgb,var(--box) 96%,#000));border:1px solid color-mix(in srgb,var(--box) 86%,#000);box-shadow:0 16px 40px -24px rgba(0,0,0,.35)}
+.stk-face .stks{pointer-events:auto}
+.stk-face .stk{cursor:grab;touch-action:none}
+.stk-face .stk.sel{outline:2px dashed var(--accent);outline-offset:4px}
+.tray{display:flex;flex-wrap:wrap;gap:6px}
+.tray button{width:52px;height:52px;border:1px solid var(--line);border-radius:12px;background:var(--soft);cursor:pointer;display:grid;place-items:center;padding:7px;transition:transform .15s}
+.tray button:hover{transform:translateY(-2px) rotate(-4deg)}
+.tray button svg{width:100%;height:100%;filter:drop-shadow(1px 0 0 #fff) drop-shadow(-1px 0 0 #fff) drop-shadow(0 1px 0 #fff) drop-shadow(0 -1px 0 #fff)}
+.tray .tx{font-weight:700;font-size:13px;width:auto;padding:0 12px;font-family:var(--f-display)}
+.boxcolors{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;color:var(--sub)}
+.boxcolors input[type=color]{width:30px;height:30px;border:0;padding:0;background:none;cursor:pointer;border-radius:50%}
+.boxcolors input::-webkit-color-swatch-wrapper{padding:0}
+.boxcolors input::-webkit-color-swatch{border:1px solid var(--line);border-radius:50%}
+.boxcolors input::-moz-color-swatch{border:1px solid var(--line);border-radius:50%}
+.sctl{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;min-height:40px;font-size:13px;color:var(--sub)}
+.sctl label{display:flex;align-items:center;gap:8px}
+.sctl input[type=range]{width:120px;accent-color:var(--accent)}
+.sctl .in{width:180px;font-size:14px;padding:7px 10px}
+.swatch{width:26px;height:26px;border-radius:50%;border:2px solid var(--bg);box-shadow:0 0 0 1px var(--line);cursor:pointer;padding:0}
+.swatch[aria-pressed="true"]{box-shadow:0 0 0 2px var(--accent)}
+
+/* accounts */
+body:not(.has-cloud) .cloud-only{display:none!important}
+body.signed-in .anon-only{display:none!important}
+.sync{font-size:12px;color:var(--sub);margin-top:4px;min-height:1.2em}
+.sync.err{color:#D23B3B}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+.tabs button{border:0;background:none;padding:10px 14px;font-size:15px;font-weight:600;color:var(--sub);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.authf{display:grid;gap:10px}
+.authf .err{min-height:1.2em}
+.or{display:flex;align-items:center;gap:10px;color:var(--sub);font-size:12px}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+.gbtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%}
+.gbtn svg{width:18px;height:18px}
+.linkish{border:0;background:none;color:var(--sub);font-size:13px;text-decoration:underline;cursor:pointer;padding:0;justify-self:start}
+.lib{list-style:none;margin:0;padding:0;display:grid;gap:8px;max-height:min(60vh,520px);overflow:auto}
+.lib li{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px}
+.lib b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lib span{font-size:12px;color:var(--sub)}
+.lib a{color:inherit;text-decoration:none}
+.lib .open{font-size:13px}
+.lib .pick{display:flex;gap:12px;align-items:center;min-width:0;border:0;background:none;padding:0;text-align:left;cursor:pointer;color:inherit;font:inherit}
+.lib .pick>div{min-width:0}
+.lib li.cur{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.lib li{grid-template-columns:minmax(0,1fr) auto}
+.shelfsw{position:relative;flex:none;width:44px;height:44px;border-radius:8px;border:1px solid var(--line);overflow:hidden}
+.shelfsw i{position:absolute;border-radius:50%}
+.shelfsw i:first-child{left:5px;bottom:5px;width:22px;height:22px}
+.shelfsw i:last-child{right:4px;top:5px;width:18px;height:18px;border-radius:4px}
+.libtools{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center}
+@media (max-width:520px){.libtools{grid-template-columns:minmax(0,1fr) auto}.libtools #newBoxBtn{grid-column:1/-1}}
+.lbhint{font-size:12px;color:var(--sub)}
+
+/* manager + design */
+.mgr,.design{border-top:1px solid var(--line);padding-top:28px;display:grid;gap:18px}
+.fields{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:10px}
+@media (max-width:560px){.fields{grid-template-columns:minmax(0,1fr)}}
+label.f{display:grid;gap:4px;font-size:12px;color:var(--sub)}
+.in{font:inherit;font-size:15px;color:var(--ink);padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);width:100%;min-width:0}
+.in:focus{outline:none;border-color:var(--accent)}
+.add{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:start}
+.add textarea{resize:none;height:46px;min-height:46px;max-height:46px;line-height:24px;overflow-y:auto;font-size:14px;white-space:pre}
+.add .btn{height:46px}
+.add .note{grid-column:1/-1;font-size:12px;color:var(--sub);line-height:1.5}
+.list{list-style:none;margin:0;padding:0;display:grid}
+.item{display:grid;grid-template-columns:52px minmax(0,1fr) minmax(0,.8fr) auto auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);animation:rise .4s both}
+.item .th{width:52px;height:52px}
+.item .th .art{width:100%;height:100%;border-radius:4px}
+.item .th .fb{display:none}
+.item .in{padding:7px 9px;font-size:14px}
+.item .hlinfo{font-family:var(--f-mono);font-size:12px;color:var(--sub);white-space:nowrap;font-variant-numeric:tabular-nums}
+.item .hlinfo.on{color:var(--hl-ink);background:var(--hl);padding:2px 8px;border-radius:999px}
+.item .acts{display:flex;gap:2px}
+.sq{width:32px;height:32px;border:0;background:none;border-radius:8px;cursor:pointer;color:var(--sub);font-size:15px}
+.sq:hover{background:var(--soft);color:var(--ink)}
+@media (max-width:620px){
+  .item{grid-template-columns:52px minmax(0,1fr) auto;grid-template-areas:"th t acts" "th a hl"}
+  .item .th{grid-area:th}.item .t{grid-area:t}.item .a{grid-area:a}.item .hlinfo{grid-area:hl;justify-self:end}.item .acts{grid-area:acts}
+}
+.empty{color:var(--sub);font-size:14px;padding:12px 0}
+.dgroup{display:grid;gap:10px}
+.dgroup>h3{margin:0;font-size:13px;font-weight:600;color:var(--sub);letter-spacing:.02em}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:12px;padding:9px 14px;cursor:pointer;font-size:15px;display:inline-flex;align-items:center;gap:8px;transition:border-color .2s,transform .15s}
+.chip:hover{border-color:var(--sub)}
+.chip:active{transform:scale(.97)}
+.chip[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.dots{display:inline-flex}
+.dots i{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--bg);margin-left:-5px;box-shadow:0 0 0 1px rgba(0,0,0,.12)}
+.dots i:first-child{margin-left:0}
+.colors{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:8px}
+.crow{min-width:0;display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:8px 10px;cursor:pointer;font-size:14px}
+.crow input{width:30px;height:30px;border:0;padding:0;background:none;cursor:pointer;flex:none;border-radius:8px}
+.crow input::-webkit-color-swatch-wrapper{padding:0}
+.crow input::-webkit-color-swatch{border:1px solid rgba(0,0,0,.15);border-radius:8px}
+.crow input::-moz-color-swatch{border:1px solid rgba(0,0,0,.15);border-radius:8px}
+.crow code{margin-left:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--f-mono);font-size:11px;color:var(--sub)}
+
+/* modal, preview, toast */
+.modal{position:fixed;inset:0;z-index:60;background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:grid;place-items:center;
+  padding:max(20px,env(safe-area-inset-top,0px)) max(20px,env(safe-area-inset-right,0px)) max(20px,env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px));animation:fadeIn .25s}
+@keyframes fadeIn{from{opacity:0}}
+.sheet{width:min(520px,100%);background:var(--bg);border:1px solid var(--line);border-radius:20px;padding:24px;box-shadow:0 30px 60px -30px rgba(0,0,0,.3);display:grid;gap:14px;animation:pop .35s cubic-bezier(.2,.8,.2,1.1)}
+@keyframes pop{from{opacity:0;transform:translateY(12px) scale(.97)}}
+.sheet h3{font-family:var(--f-display);font-weight:var(--dw);font-size:calc(22px * var(--dz));margin:0}
+.sheet p{margin:0;color:var(--sub);font-size:14px}
+.sheet .row{display:flex;gap:8px;flex-wrap:wrap}
+.sheet .row .in{font-family:var(--f-mono);font-size:12px;flex:1 1 200px}
+.pv{position:fixed;inset:0;z-index:65;background:var(--soft);display:grid;grid-template-rows:auto minmax(0,1fr);animation:fadeIn .25s;
+  padding:calc(env(safe-area-inset-top,0px) + 12px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 16px) max(16px,env(safe-area-inset-left,0px))}
+.pv-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-bottom:12px}
+.pv-bar b{font-family:var(--f-display);font-weight:var(--dw);font-size:calc(18px * var(--dz));margin-right:auto}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--bg)}
+.seg button{border:0;background:none;padding:6px 14px;border-radius:999px;cursor:pointer;font-size:13px;color:var(--sub)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.pv-area{display:grid;place-items:center;min-height:0;overflow:hidden}
+.pv-dev{position:relative;overflow:hidden;background:#fff;box-shadow:0 30px 60px -20px rgba(0,0,0,.35),0 0 0 1px rgba(0,0,0,.08);border-radius:14px;animation:pop .45s cubic-bezier(.2,.8,.2,1.05)}
+.pv-dev.phone{border-radius:34px;box-shadow:0 30px 60px -20px rgba(0,0,0,.35),0 0 0 10px #151515,0 0 0 11px #333}
+.pv-dev iframe{position:absolute;left:0;top:0;border:0;transform-origin:0 0;background:#fff}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,10px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;
+  opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:70;display:flex;gap:12px;align-items:center;max-width:calc(100vw - 40px)}
+.toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.toast button{background:none;border:0;color:var(--hl);font-weight:600;cursor:pointer;padding:0}
+body.shared .owner{display:none!important}
+body.linked .no-linked{display:none!important}
+body:not(.linked) .only-linked{display:none!important}
+.linknote{border:1px solid var(--line);border-radius:14px;padding:14px 16px;font-size:14px;line-height:1.6;color:var(--sub);display:grid;gap:10px;margin-bottom:6px}
+.linknote b{color:var(--ink);display:block;font-size:15px}
+.linknote .row{display:flex;gap:8px;flex-wrap:wrap}
+.list .grp{font-size:12px;color:var(--sub);font-weight:600;padding:16px 0 4px;letter-spacing:.02em}
+.list .grp:first-child{padding-top:4px}
+.list .sub{font-size:13px;color:var(--sub);padding:10px 0;border-bottom:1px solid var(--line)}
+.item.ro .in{background:transparent;border-color:transparent;cursor:default}
+.item.hid .th,.item.hid .in{opacity:.38}
+.item.hid .in{text-decoration:line-through}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}
+</style>
+</head>
+<body data-fx="notes">
+<div class="page">
+  <header class="top">
+    <div class="grow">
+      <div class="brand">LP BOX</div>
+      <h1 id="boxTitle"></h1>
+      <div class="by" id="boxBy"></div>
+      <div class="sync owner cloud-only" id="syncState"></div>
+      <p class="intro" id="boxIntro" hidden></p>
+    </div>
+    <button class="ib focus-btn" id="focusBtn" type="button" aria-label="플레이어만 화면 가득 보기" title="플레이어만 크게 보기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/><circle cx="12" cy="10.5" r="3"/></svg></button>
+    <button class="btn dark shared-only" id="importBtn" type="button">플리 가져오기</button>
+    <button class="btn owner cloud-only" id="acctBtn" type="button">로그인</button>
+    <button class="btn owner anon-only no-linked" id="editLinkBtn" type="button">편집용 링크</button>
+    <button class="btn owner" id="previewBtn" type="button">공유 미리보기</button>
+    <button class="btn dark owner" id="shareBtn" type="button">공유하기</button>
+  </header>
+
+  <div class="warn owner" id="fileWarn" hidden>
+    <div class="grow">이 파일을 컴퓨터에서 바로 열면 유튜브가 재생되지 않아요. 웹에 올린 주소로 열어 주세요.</div>
+  </div>
+
+  <section class="deck" id="deck" aria-label="턴테이블">
+    <div class="visual" id="visual">
+      <div class="glow" id="glow"></div>
+      <div class="cover" id="cover"></div>
+      <div class="tt" id="tt">
+        <div class="platter">
+          <div class="record off" id="record">
+            <div class="disc" id="disc"><div class="label" id="label"></div></div>
+            <div class="sheen"></div>
+          </div>
+          <div class="spindle"></div>
+        </div>
+        <div class="pivot"></div>
+        <div class="arm" id="arm" role="slider" tabindex="0" aria-label="톤암. 판 위에 올리면 재생, 들어 올리면 멈춤" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+        <button class="zoom" id="zoomBtn" type="button" aria-label="턴테이블 크게 보기" aria-pressed="false" title="크게 보기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" id="zoomIco"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></button>
+        <div class="speed"><span class="led"></span><button class="rpm" type="button" data-r="33" aria-pressed="true">33⅓</button><button class="rpm" type="button" data-r="45" aria-pressed="false">45</button><span class="rpm-l">&nbsp;RPM</span></div>
+      </div>
+      <div class="fx" id="fx"></div>
+      <div class="tt-cap owner" id="ttCap"></div>
+    </div>
+
+    <div class="info">
+      <div id="nowBox">
+        <div class="now-k"><span id="nowK">READY</span><span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span></div>
+        <div class="now-t" id="nowT">아래 상자에서 레코드를 골라 보세요</div>
+        <div class="now-a" id="nowA">고른 레코드가 턴테이블에 올라가면 재생돼요</div>
+      </div>
+      <div>
+        <div class="bar" id="bar" role="slider" aria-label="재생 위치" tabindex="0" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div class="track"></div><div class="mark" id="mark" hidden></div><div class="fill" id="fill"></div><div class="knob" id="knob"></div>
+        </div>
+        <div class="times"><span id="tCur">0:00</span><span id="tDur">0:00</span></div>
+      </div>
+      <div class="ctrls">
+        <button class="ib" id="prevBtn" type="button" aria-label="이전 곡"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+        <button class="ib big" id="playBtn" type="button" aria-label="재생"><svg viewBox="0 0 24 24" fill="currentColor" id="playIco"><path d="M7 4v16l13-8z"/></svg></button>
+        <button class="ib" id="nextBtn" type="button" aria-label="다음 곡"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button>
+        <button class="hlpill" id="hlJump" type="button" disabled>하이라이트 <span class="tm" id="hlJumpT">없음</span></button>
+        <button class="toggle" id="hlOnly" type="button" aria-pressed="false"><i></i>하이라이트만 이어 듣기</button>
+      </div>
+      <div class="marker owner no-linked" id="marker">
+        <span class="lbl">하이라이트 표시</span>
+        <button class="btn sm" id="markS" type="button">지금부터</button>
+        <button class="btn sm" id="markE" type="button">여기까지</button>
+        <button class="btn sm" id="markX" type="button">지우기</button>
+      </div>
+      <div class="err" id="err" hidden></div>
+      <div class="vid"><div class="vbox"><div id="yt"></div></div><div class="vmeta"><b id="vT"></b><span id="vC"></span></div></div>
+    </div>
+  </section>
+
+  <section class="crate-sec" aria-label="레코드 박스">
+    <div class="sec-h"><h2>레코드 박스</h2><span id="count"></span><button class="btn sm owner no-linked" id="decoBtn" type="button" style="margin-left:auto">상자 꾸미기</button><button class="ib owner" id="listBtn" type="button" aria-label="보관함 목록" title="보관함 목록" style="width:36px;height:36px;align-self:center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="4.5" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="4.5" cy="18" r="1.2" fill="currentColor" stroke="none"/></svg></button></div>
+    <div class="stage" id="stage" tabindex="0" aria-label="레코드 박스. 좌우 화살표로 넘기고 엔터로 재생">
+      <button class="boxnav owner" id="boxPrev" type="button" aria-label="이전 박스" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <button class="boxnav owner" id="boxNext" type="button" aria-label="다음 박스" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 5l7 7-7 7"/></svg></button>
+      <div class="carousel" id="carousel">
+      <div id="minis"></div>
+      <div class="world intro" id="world">
+        <div class="face bottom"></div>
+        <div class="face back"></div>
+        <div class="face left"></div>
+        <div class="face right"></div>
+        <div class="sleeves" id="sleeves"></div>
+        <div class="face front"><div class="tag" id="tagBox"><b id="tagT"></b><span id="tagN"></span></div><div class="stks" id="stks3d"></div></div>
+        <div class="flap l"></div><div class="flap r"></div>
+        <div class="flap f"></div><div class="flap b"></div>
+      </div>
+      </div>
+    </div>
+    <div class="boxdots owner" id="boxDots" aria-label="박스 고르기"></div>
+    <div class="crate-nav" id="crateNav">
+      <button class="ib" id="cPrev" type="button" aria-label="앞 레코드"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <div class="pick"><b id="pickT"></b><span id="pickN"></span></div>
+      <button class="ib" id="cNext" type="button" aria-label="뒤 레코드"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg></button>
+      <button class="btn dark" id="pickBtn" type="button">꺼내서 듣기</button>
+    </div>
+    <div class="hint owner" id="hint"></div>
+  </section>
+
+  <section class="links" id="blocks" aria-label="소개" hidden></section>
+
+  <section class="mgr owner" aria-label="레코드 관리">
+    <div class="sec-h"><h2 id="mgrH">내 박스 꾸미기</h2></div>
+    <div class="linknote only-linked" id="linkNote"></div>
+    <div class="fields no-linked">
+      <label class="f">박스 이름<input class="in" id="inTitle" maxlength="40"></label>
+      <label class="f">만든 사람<input class="in" id="inBy" maxlength="24"></label>
+    </div>
+    <label class="f no-linked">소개글<textarea class="in" id="inIntro" maxlength="300" style="resize:none;height:84px;line-height:1.5" placeholder="이 박스를 받을 사람에게 하고 싶은 말"></textarea></label>
+    <form class="add" id="addForm" autocomplete="off">
+      <textarea class="in" id="inUrl" rows="1" placeholder="유튜브 노래 링크나 재생목록 링크를 붙여넣으세요" spellcheck="false"></textarea>
+      <button class="btn dark" type="submit">레코드 넣기</button>
+      <div class="note">재생목록 링크를 넣으면 들어 있는 곡이 한 번에 들어와요. 노래 링크 여러 개를 함께 붙여넣어도 돼요. 곡 제목과 가수는 자동으로 채워지고, 아래 목록에서 고칠 수 있어요.</div>
+    </form>
+    <ol class="list" id="list"></ol>
+    <div class="sec-h no-linked" style="margin-top:12px"><h2>링크 · 사진 · 글</h2><span>박스 아래에 차례대로 보여요</span></div>
+    <div class="addrow no-linked">
+      <button class="btn sm" type="button" data-add="text">+ 글</button>
+      <button class="btn sm" type="button" data-add="link">+ 링크</button>
+      <button class="btn sm" type="button" data-add="img">+ 사진</button>
+      <button class="btn sm" type="button" data-add="space">+ 공백</button>
+      <input type="file" id="imgFile" accept="image/*" hidden>
+    </div>
+    <div class="bedit no-linked" id="bedit"></div>
+  </section>
+
+  <section class="design owner no-linked" aria-label="디자인">
+    <div class="sec-h"><h2>디자인</h2><span>바꾼 디자인은 공유 링크에도 그대로 담겨요</span></div>
+    <div class="dgroup"><h3>테마</h3><div class="chips" id="themes"></div></div>
+    <div class="dgroup"><h3>색</h3><div class="colors" id="colors"></div></div>
+    <div class="dgroup"><h3>제목 글꼴</h3><div class="chips" id="fontsD"></div></div>
+    <div class="dgroup"><h3>본문 글꼴</h3><div class="chips" id="fontsB"></div></div>
+    <div class="dgroup"><h3>영어 글꼴 <small style="font-weight:400">영어 글자에만 따로 쓰여요</small></h3><div class="chips" id="fontsEn"></div></div>
+    <div class="dgroup"><h3>일본어 글꼴 <small style="font-weight:400">일본어 글자에만 따로 쓰여요</small></h3><div class="chips" id="fontsJp"></div></div>
+    <div class="dgroup"><h3>버튼 모양</h3><div class="chips" id="bss"></div></div>
+    <div class="dgroup"><h3>재생 중 효과</h3><div class="chips" id="fxs"></div></div>
+    <div><button class="btn sm" id="resetStyle" type="button">기본 디자인으로 되돌리기</button></div>
+  </section>
+  <footer class="made shared-only" style="gap:8px;flex-wrap:wrap"><button class="btn sm" id="makeOwn" type="button">나도 LP 박스 만들기</button></footer>
+</div>
+
+<div class="modal" id="stkModal" hidden>
+  <div class="sheet wide" role="dialog" aria-modal="true" aria-labelledby="sTitle">
+    <h3 id="sTitle">상자 꾸미기</h3>
+    <p>스티커를 눌러 붙이고, 끌어서 옮겨 보세요.</p>
+    <div class="stk-face" id="stkFace"></div>
+    <div class="boxcolors" id="boxColors"></div>
+    <div class="sctl" id="sctl"></div>
+    <input type="file" id="stkFile" accept="image/*" hidden>
+    <div class="tray" id="tray"></div>
+    <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center">
+      <button class="toggle" id="tagToggle" type="button" aria-pressed="true"><i></i>이름표 붙이기</button>
+      <div style="display:flex;gap:8px"><button class="btn sm" id="stkClear" type="button">모두 떼기</button><button class="btn dark" id="stkDone" type="button">완료</button></div>
+    </div>
+  </div>
+</div>
+
+<button class="ib focus-exit" id="focusExit" type="button" hidden aria-label="원래 화면으로" title="원래 화면으로"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+<div class="modal" id="borderAsk" hidden style="z-index:62">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="bTitle">
+    <h3 id="bTitle">테두리를 넣을까요?</h3>
+    <p id="bMsg"></p>
+    <div class="bopts">
+      <button class="bopt" type="button" data-b="0"><span class="bprevbox" id="bPrev0"></span>테두리 없이</button>
+      <button class="bopt" type="button" data-b="1"><span class="bprevbox" id="bPrev1"></span>흰 테두리 넣기</button>
+    </div>
+    <div style="display:flex;justify-content:flex-end"><button class="btn sm" type="button" id="bCancel">넣지 않기</button></div>
+  </div>
+</div>
+<div class="modal" id="editModal" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="eTitle">
+    <h3 id="eTitle">편집용 링크</h3>
+    <p>다른 기기나 브라우저에서 이 링크를 열면 지금 내 박스를 그대로 불러와서 계속 고칠 수 있어요. 브라우저 기록을 지울 때를 대비한 백업으로도 쓸 수 있어요.</p>
+    <div class="row"><input class="in" id="editUrl" readonly><button class="btn dark" id="editCopy" type="button">복사</button></div>
+    <p>이 링크를 받은 사람도 박스를 고칠 수 있으니 나만 보관하세요. 박스를 고친 뒤에는 새로 복사해 두어야 최신 상태가 담겨요.</p>
+    <div style="display:flex;justify-content:flex-end"><button class="btn" id="editClose" type="button">닫기</button></div>
+  </div>
+</div>
+<div class="modal" id="authModal" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="로그인">
+    <div class="tabs" role="tablist"><button type="button" role="tab" id="tabIn" aria-selected="true">로그인</button><button type="button" role="tab" id="tabUp" aria-selected="false">회원가입</button></div>
+    <p id="authWhy" hidden></p>
+    <form class="authf" id="authForm" autocomplete="on">
+      <label class="f" id="nameRow" hidden>닉네임<input class="in" id="aName" maxlength="24" autocomplete="nickname"></label>
+      <label class="f">이메일<input class="in" id="aEmail" type="email" autocomplete="email" required></label>
+      <label class="f">비밀번호<input class="in" id="aPw" type="password" minlength="6" autocomplete="current-password" required></label>
+      <div class="err" id="aErr"></div>
+      <button class="btn dark" type="submit" id="aSubmit">로그인</button>
+      <button class="linkish" type="button" id="aReset">비밀번호를 잊었어요</button>
+    </form>
+    <div class="or">또는</div>
+    <button class="btn gbtn" type="button" id="aGoogle"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Google로 계속하기</button>
+    <div style="display:flex;justify-content:flex-end"><button class="btn sm" type="button" id="authClose">닫기</button></div>
+  </div>
+</div>
+<div class="modal" id="acctModal" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="acTitle">
+    <h3 id="acTitle"></h3>
+    <p id="acMail"></p>
+    <p>보관함의 박스들은 이 계정에 자동으로 저장돼요. 다른 기기에서 같은 계정으로 로그인하면 그대로 이어서 고칠 수 있어요.</p>
+    <div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn" type="button" id="acOut">로그아웃</button><button class="btn dark" type="button" id="acClose">닫기</button></div>
+  </div>
+</div>
+<div class="modal" id="libModal" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="lbTitle">
+    <h3 id="lbTitle">내 보관함</h3>
+    <form class="libtools" id="impForm" autocomplete="off">
+      <button class="btn sm dark" type="button" id="newBoxBtn">+ 새 박스</button>
+      <input class="in" id="impUrl" placeholder="친구가 보낸 LP 박스 링크 붙여넣기" spellcheck="false" inputmode="url">
+      <button class="btn sm" type="submit" id="impGo">가져오기</button>
+    </form>
+    <div class="err" id="impErr"></div>
+    <ul class="lib" id="libList"></ul>
+    <p class="lbhint" id="lbHint"></p>
+    <div style="display:flex;justify-content:flex-end"><button class="btn" type="button" id="lbClose">닫기</button></div>
+  </div>
+</div>
+
+<div class="modal" id="modal" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <h3 id="mTitle">내 LP 박스 공유하기</h3>
+    <p>레코드 목록, 하이라이트, 디자인이 모두 담긴 링크예요. 받은 사람은 링크만 열면 바로 상자를 열어 볼 수 있어요.</p>
+    <div class="row"><input class="in" id="shareUrl" readonly><button class="btn dark" id="copyBtn" type="button">복사</button></div>
+    <p id="shortState" style="font-size:13px"></p>
+    <p id="shareNote"></p>
+    <div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn" id="mPreview" type="button">받는 사람 화면 미리보기</button><button class="btn" id="closeModal" type="button">닫기</button></div>
+  </div>
+</div>
+<div class="pv" id="pv" hidden role="dialog" aria-modal="true" aria-label="공유 미리보기">
+  <div class="pv-bar">
+    <b>링크를 받은 사람에게 이렇게 보여요</b>
+    <div class="seg" id="pvSeg"><button type="button" data-d="phone" aria-pressed="true">휴대폰</button><button type="button" data-d="desk" aria-pressed="false">컴퓨터</button></div>
+    <button class="btn sm" id="pvReplay" type="button">처음부터 다시</button>
+    <button class="btn sm dark" id="pvCopy" type="button">링크 복사</button>
+    <button class="btn sm" id="pvClose" type="button">닫기</button>
+  </div>
+  <div class="pv-area" id="pvArea"><div class="pv-dev phone" id="pvDev"><iframe id="pvFrame" title="공유 화면 미리보기" allow="autoplay; encrypted-media"></iframe></div></div>
+</div>
+<div class="toast" id="toast" role="status"><span id="toastMsg"></span><button id="toastAct" type="button" hidden></button></div>
+
+<script>
+window.__cloud=new Promise((res,rej)=>{window.__cloudSet=res;window.__cloudFail=rej});
+/* the config block may have been replaced with Firebase's own "const firebaseConfig = {...}" — take that too */
+(function(){let c=window.LPBOX_FIREBASE;
+  if(!(c&&c.apiKey)){try{if(typeof firebaseConfig!=="undefined"&&firebaseConfig&&firebaseConfig.apiKey)c=firebaseConfig}catch(e){}}
+  window.LPBOX_FIREBASE=c;
+  window.__cloudWhy=c&&c.apiKey?"":(c===undefined?"typo":"empty");     // undefined = the config block didn't run (a missing quote or comma)
+  if(!(c&&c.apiKey))window.__cloudSet(null)})();
+</script>
+<script type="module">
+/* Firebase (free Spark plan): accounts + one stored box per account + each account's saved boxes.
+   Only loaded when a config is filled in at the top of this file. */
+const cfg=window.LPBOX_FIREBASE;
+if(cfg&&cfg.apiKey){
+  const B="https://www.gstatic.com/firebasejs/10.12.2/";
+  try{
+    const [A,U,F]=await Promise.all([import(B+"firebase-app.js"),import(B+"firebase-auth.js"),import(B+"firebase-firestore.js")]);
+    const app=A.initializeApp(cfg),auth=U.getAuth(app),db=F.getFirestore(app);
+    let user=null;const subs=new Set();
+    const prof=u=>u?{uid:u.uid,name:u.displayName||(u.email||"").split("@")[0]||"나",email:u.email||""}:null;
+    const tell=()=>subs.forEach(f=>{try{f(prof(user))}catch(e){console.error(e)}});
+    await new Promise(r=>{let first=true;U.onAuthStateChanged(auth,u=>{user=u;if(first){first=false;r()}else tell()})});
+    window.__cloudSet({
+      user:()=>prof(user),
+      onUser:f=>subs.add(f),
+      async signUp(email,pw,name){const c=await U.createUserWithEmailAndPassword(auth,email,pw);if(name)await U.updateProfile(c.user,{displayName:name});user=auth.currentUser;tell();return prof(user)},
+      async signIn(email,pw){const c=await U.signInWithEmailAndPassword(auth,email,pw);user=c.user;return prof(user)},
+      async google(){const p=new U.GoogleAuthProvider();try{const c=await U.signInWithPopup(auth,p);user=c.user;return prof(user)}
+        catch(e){if(e.code==="auth/popup-blocked"||e.code==="auth/operation-not-supported-in-this-environment"){await U.signInWithRedirect(auth,p);return null}throw e}},
+      reset:email=>U.sendPasswordResetEmail(auth,email),
+      signOut:()=>U.signOut(auth),
+      async getBox(id){const d=await F.getDoc(F.doc(db,"boxes",id));return d.exists()?{id:d.id,...d.data()}:null},
+      async myBoxes(uid){const q=await F.getDocs(F.query(F.collection(db,"boxes"),F.where("owner","==",uid)));return q.docs.map(d=>({id:d.id,...d.data()}))},
+      deleteBox:id=>F.deleteDoc(F.doc(db,"boxes",id)),
+      watchBox:F.onSnapshot?(id,cb)=>F.onSnapshot(F.doc(db,"boxes",id),d=>cb(d.exists()?{id:d.id,...d.data()}:null),()=>{}):null,
+      saveBox:(id,payload)=>F.setDoc(F.doc(db,"boxes",id),{...payload,updatedAt:F.serverTimestamp()}),
+    });
+  }catch(e){console.error("LP BOX: 계정 기능을 불러오지 못했어요",e);window.__cloudFail(e)}
+}
+</script>
+<script>
+/* ---------- design options ---------- */
+const FONTS=[
+  {id:"hahmlet",n:"함렛",f:"Hahmlet",q:"Hahmlet:wght@400;600;700",w:700,k:"serif"},
+  {id:"gowunbatang",n:"고운바탕",f:"Gowun Batang",q:"Gowun+Batang:wght@400;700",w:700,k:"serif"},
+  {id:"myeongjo",n:"나눔명조",f:"Nanum Myeongjo",q:"Nanum+Myeongjo:wght@400;700;800",w:800,k:"serif"},
+  {id:"songmyung",n:"송명",f:"Song Myung",q:"Song+Myung",w:400,k:"serif"},
+  {id:"plex",n:"IBM 플렉스",f:"IBM Plex Sans KR",q:"IBM+Plex+Sans+KR:wght@400;500;600;700",w:700,k:"sans-serif"},
+  {id:"gothica1",n:"고딕 A1",f:"Gothic A1",q:"Gothic+A1:wght@400;500;700;800",w:800,k:"sans-serif"},
+  {id:"nanumgothic",n:"나눔고딕",f:"Nanum Gothic",q:"Nanum+Gothic:wght@400;700;800",w:800,k:"sans-serif"},
+  {id:"gowundodum",n:"고운돋움",f:"Gowun Dodum",q:"Gowun+Dodum",w:400,k:"sans-serif"},
+  {id:"dohyeon",n:"도현",f:"Do Hyeon",q:"Do+Hyeon",w:400,k:"sans-serif"},
+  {id:"jua",n:"주아",f:"Jua",q:"Jua",w:400,k:"sans-serif"},
+  {id:"blackhan",n:"블랙한산스",f:"Black Han Sans",q:"Black+Han+Sans",w:400,k:"sans-serif",only:"d"},
+  /* 눈누 fonts: declared with @font-face at the top of the stylesheet */
+  {id:"joseongulim",n:"조선굴림체",f:"JoseonGulim",w:400,k:"sans-serif"},
+  {id:"kkakdugi",n:"깍두기 도면체",f:"Kkakdugi Drafting",w:700,k:"sans-serif"},
+  {id:"jejudoldam",n:"제주돌담체",f:"JejuStoneWall",w:400,k:"sans-serif",only:"d"},
+  {id:"busandandi",n:"부산단디손글씨",f:"BusanDandiHandwriting",w:400,k:"cursive",z:1.05},
+];
+/* Latin text can use its own face (listed first; Google serves it only for Latin code points),
+   kana/kanji fall through the Korean face to a Japanese one */
+const EN_FONTS=[{id:"none",n:"한글 글꼴 그대로"},
+  {id:"fraunces",n:"Fraunces",f:"Fraunces",q:"Fraunces:wght@400;600;700"},
+  {id:"playfair",n:"Playfair Display",f:"Playfair Display",q:"Playfair+Display:wght@400;600;700"},
+  {id:"dmsans",n:"DM Sans",f:"DM Sans",q:"DM+Sans:wght@400;500;700"},
+  {id:"space",n:"Space Grotesk",f:"Space Grotesk",q:"Space+Grotesk:wght@400;500;700"},
+  {id:"caveat",n:"Caveat",f:"Caveat",q:"Caveat:wght@400;700"}];
+const JP_FONTS=[{id:"auto",n:"자동"},
+  {id:"notojp",n:"Noto Sans JP",f:"Noto Sans JP",q:"Noto+Sans+JP:wght@400;500;700"},
+  {id:"zenmaru",n:"Zen Maru Gothic",f:"Zen Maru Gothic",q:"Zen+Maru+Gothic:wght@400;500;700"},
+  {id:"mplus",n:"M PLUS Rounded 1c",f:"M PLUS Rounded 1c",q:"M+PLUS+Rounded+1c:wght@400;500;700"},
+  {id:"zenmincho",n:"Zen Old Mincho",f:"Zen Old Mincho",q:"Zen+Old+Mincho:wght@400;700"},
+  {id:"yomogi",n:"Yomogi",f:"Yomogi",q:"Yomogi"},
+  {id:"hachimaru",n:"Hachi Maru Pop",f:"Hachi Maru Pop",q:"Hachi+Maru+Pop"}];
+const JP_AUTO=ko=>ko.k==="serif"?"zenmincho":ko.k==="cursive"?"yomogi":["jua","gowundodum","dohyeon"].includes(ko.id)?"zenmaru":"notojp";
+const THEMES=[
+  {id:"white",n:"화이트",c:{bg:"#FFFFFF",accent:"#151515",tt:"#FFFFFF",vinyl:"#111111",box:"#FFFFFF",hl:"#FFE45C"}},
+  {id:"rose",n:"로즈 가든",c:{bg:"#FFF9D6",accent:"#8EA66B",tt:"#FFDCDC",vinyl:"#D8A2A2",box:"#FFDCDC",hl:"#D8A2A2"}},
+  {id:"lemon",n:"레모네이드",c:{bg:"#F9E8A2",accent:"#78A4CB",tt:"#B4E1EB",vinyl:"#78A4CB",box:"#95BDD7",hl:"#B4E1EB"}},
+  {id:"latte",n:"카페 라떼",c:{bg:"#FFFBE9",accent:"#AD8B73",tt:"#CEAB93",vinyl:"#AD8B73",box:"#E3CAA5",hl:"#E3CAA5"}},
+  {id:"vintage",n:"빈티지 블루",c:{bg:"#EEE3CB",accent:"#967E76",tt:"#B7C4CF",vinyl:"#967E76",box:"#D7C0AE",hl:"#B7C4CF"}},
+  {id:"sage",n:"세이지",c:{bg:"#F8EDE3",accent:"#798777",tt:"#BDD2B6",vinyl:"#798777",box:"#A2B29F",hl:"#BDD2B6"}},
+];
+const COLOR_FIELDS=[["bg","배경"],["accent","포인트"],["tt","턴테이블"],["vinyl","레코드판"],["box","상자"],["hl","하이라이트"]];
+const FX=[["notes","떠오르는 음표"],["glow","은은한 빛"],["both","음표와 빛"],["none","없음"]];
+const BS=[["round","둥근 선","border:1px solid var(--line);border-radius:999px"],["pop","톡 튀는","border:1.5px solid var(--ink);border-radius:999px;box-shadow:0 2px 0 var(--ink)"],
+  ["fill","꽉 찬","background:var(--accent);color:var(--accent-ink);border-radius:999px"],["square","네모","border:1.5px solid var(--ink);border-radius:5px"],
+  ["soft","부드러운 그림자","border-radius:12px;box-shadow:0 4px 12px -4px rgba(0,0,0,.3)"]];
+const DEF_STYLE=()=>({theme:"white",...THEMES[0].c,fd:"hahmlet",fb:"plex",fx:"notes",bs:"round",en:"none",jp:"auto"});
+
+/* ---------- data ---------- */
+const KEY="lpbox-v1";
+const uid=()=>Math.random().toString(36).slice(2,10);
+const SAMPLE=()=>({sv:4,title:"밤 산책용 LP",by:"",intro:"",blocks:[],tagOff:false,
+  stickers:[{k:"star",x:12,y:26,r:-12,s:15},{k:"fragile",x:84,y:20,r:7,s:28},{k:"heart",x:90,y:76,r:12,s:12}],
+  style:DEF_STYLE(),tracks:[
+  {v:"BzYnNdJhZQw",t:"밤편지",a:"아이유",hs:75,he:112},
+  {v:"d9IxdwEFk1c",t:"팔레트 (feat. G-DRAGON)",a:"아이유",hs:-1,he:-1},
+  {v:"D1PvIWdJ8xo",t:"Blueming",a:"아이유",hs:-1,he:-1},
+  {v:"pSUydWEqKwE",t:"Ditto",a:"NewJeans",hs:-1,he:-1},
+  {v:"11cta61wi0g",t:"Hype Boy",a:"NewJeans",hs:-1,he:-1},
+  {v:"m3DZsBw5bnE",t:"어떻게 이별까지 사랑하겠어, 널 사랑하는 거지",a:"AKMU",hs:-1,he:-1}
+].map(t=>({id:uid(),...t}))});
+const HEX=/^#[0-9a-fA-F]{6}$/;
+function cleanStyle(s){const d=DEF_STYLE();s=s||{};const o={...d};
+  for(const[k]of COLOR_FIELDS)if(HEX.test(s[k]))o[k]=s[k];
+  if(FONTS.some(f=>f.id===s.fd))o.fd=s.fd;
+  if(FONTS.some(f=>f.id===s.fb&&f.only!=="d"))o.fb=s.fb;
+  if(EN_FONTS.some(f=>f.id===s.en))o.en=s.en;
+  if(JP_FONTS.some(f=>f.id===s.jp))o.jp=s.jp;
+  if(FX.some(f=>f[0]===s.fx))o.fx=s.fx;
+  if(BS.some(f=>f[0]===s.bs))o.bs=s.bs;
+  o.theme=THEMES.find(t=>COLOR_FIELDS.every(([k])=>t.c[k].toLowerCase()===o[k].toLowerCase()))?.id||"custom";
+  return o}
+
+let mode="owner", preview=false, data=null, localIsSample=false, shelf=null;
+function normalize(v){
+  if(!Array.isArray(v.tracks))v.tracks=[];
+  v.tracks.forEach(t=>{t.id=t.id||uid();t.hs??=-1;t.he??=-1});
+  v.title??="";v.by??="";v.intro=String(v.intro||"");v.tagOff=!!v.tagOff;
+  v.blocks=Array.isArray(v.blocks)?v.blocks.map(cleanBlock).filter(Boolean):[];
+  v.stickers=Array.isArray(v.stickers)?v.stickers.map(cleanSticker).filter(Boolean).slice(0,STK_MAX):[];
+  v.style=cleanStyle(v.style);
+  v.from=v.from&&typeof v.from==="object"?{by:String(v.from.by||"").slice(0,40),title:String(v.from.title||"").slice(0,80),src:String(v.from.src||"").slice(0,20)}:undefined;
+  if(typeof v.linked==="string"&&/^[a-z0-9]{6,16}$/.test(v.linked)){     // someone else's box I follow: their box + my extra songs
+    const ct=t=>{t.id=t.id||uid();t.hs??=-1;t.he??=-1;t.t??="";t.a??="";return t},ok=a=>(Array.isArray(a)?a:[]).filter(t=>t&&typeof t.v==="string").map(ct);
+    v.base=ok(v.base);v.extra=ok(v.extra);v.hidden=(Array.isArray(v.hidden)?v.hidden:[]).map(String).slice(0,400);v.gone=!!v.gone;relink(v)}
+  else{delete v.linked;delete v.base;delete v.extra;delete v.hidden;delete v.gone}
+  return v}
+/* a followed box shows the creator's songs (minus the ones I hid), then mine */
+function relink(v){const h=new Set(v.hidden);v.tracks=v.base.filter(t=>!h.has(t.v)).concat(v.extra);return v}
+function loadOwner(){try{const v=JSON.parse(localStorage.getItem(KEY));if(v&&Array.isArray(v.tracks)){
+  if(!v.sv){if(cleanStyle(v.style).theme==="rose")v.style=DEF_STYLE();v.sv=4}   // earlier default was rose; first visit is white now
+  return normalize(v)}}catch(e){}return null}
+/* the shelf: every box this person has made or brought in, plus which one is open */
+const SHELF_KEY="lpbox-shelf";
+function persistShelf(){try{localStorage.setItem(SHELF_KEY,JSON.stringify(shelf))}catch(e){}}
+function loadShelf(){
+  try{const s=JSON.parse(localStorage.getItem(SHELF_KEY));
+    if(s&&s.boxes&&Array.isArray(s.order)){
+      s.order=s.order.filter(id=>{const b=s.boxes[id];if(!b||!Array.isArray(b.tracks)){delete s.boxes[id];return false}normalize(b);b.lid=id;return true});
+      if(s.order.length){if(!s.boxes[s.cur])s.cur=s.order[0];return{shelf:s,fresh:false}}}}catch(e){}
+  const old=loadOwner(),b=old||normalize(SAMPLE());b.lid=uid();     // first visit, or the single box from before shelves existed
+  return{shelf:{cur:b.lid,order:[b.lid],boxes:{[b.lid]:b}},fresh:!old};
+}
+function save(fromCloud){if(mode!=="owner")return;if(!fromCloud){data.ts=Date.now();localIsSample=false}
+  shelf.boxes[data.lid]=data;persistShelf();
+  if(!fromCloud)queuePush()}
+
+/* share link: JSON -> deflate -> base64url, carried in the #hash so nothing hits a server */
+const b64u=bytes=>{let s="";for(let i=0;i<bytes.length;i+=0x8000)s+=String.fromCharCode.apply(null,bytes.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")};
+const unb64u=str=>{str=str.replace(/-/g,"+").replace(/_/g,"/");while(str.length%4)str+="=";const s=atob(str),b=new Uint8Array(s.length);for(let i=0;i<s.length;i++)b[i]=s.charCodeAt(i);return b};
+async function encodeBox(d){
+  const st=d.style;
+  const S=[st.bg,st.accent,st.tt,st.vinyl,st.box,st.hl,st.fd,st.fb,st.fx,st.bs,st.en,st.jp],D0=DEF_STYLE(),SD=[D0.bg,D0.accent,D0.tt,D0.vinyl,D0.box,D0.hl,D0.fd,D0.fb,D0.fx,D0.bs,D0.en,D0.jp];
+  const r1=n=>Math.round(n);
+  const json=JSON.stringify({n:d.title,b:d.by||undefined,d:d.intro||undefined,h:d.tagOff?1:undefined,
+    s:S.every((v,i)=>String(v).toLowerCase()===String(SD[i]).toLowerCase())?undefined:S,
+    r:d.tracks.map(t=>t.hs>=0?[t.v,t.t,t.a,t.hs,t.he]:t.a?[t.v,t.t,t.a]:[t.v,t.t]),
+    k:d.blocks.length?d.blocks.map(b=>b.t==="text"?["t",b.text]:b.t==="link"?["l",b.label,b.url]:b.t==="space"?["s",b.h]:["i",b.src]):undefined,
+    g:d.stickers.length?d.stickers.map(x=>{const a=[x.k,r1(x.x),r1(x.y),r1(x.r),r1(x.s)];
+      if(x.k==="photo")a.push(x.src,x.c||0,x.b?1:0);else if(x.k==="text")a.push(x.txt||"",x.c||0);return a}):undefined});
+  const raw=new TextEncoder().encode(json);
+  if(window.CompressionStream){try{const buf=await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream("deflate-raw"))).arrayBuffer();return "z"+b64u(new Uint8Array(buf))}catch(e){}}
+  return "j"+b64u(raw);
+}
+async function decodeBox(code){
+  let bytes=unb64u(code.slice(1));
+  if(code[0]==="z")bytes=new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).arrayBuffer());
+  const o=JSON.parse(new TextDecoder().decode(bytes)),s=o.s||[];
+  return normalize({title:String(o.n||"LP BOX"),by:String(o.b||""),intro:String(o.d||""),tagOff:!!o.h,
+    blocks:(o.k||[]).map(b=>b[0]==="t"?{t:"text",text:b[1]}:b[0]==="l"?{t:"link",label:b[1],url:b[2]}:b[0]==="s"?{t:"space",h:b[1]}:{t:"img",src:b[1]}),
+    stickers:(o.g||[]).map(g=>({k:g[0],x:g[1],y:g[2],r:g[3],s:g[4],txt:g[5],c:g[6],b:g[7]===undefined?undefined:!!g[7]})),
+    style:cleanStyle({bg:s[0],accent:s[1],tt:s[2],vinyl:s[3],box:s[4],hl:s[5],fd:s[6],fb:s[7],fx:s[8],bs:s[9],en:s[10],jp:s[11]}),
+    tracks:(o.r||[]).filter(r=>/^[\w-]{11}$/.test(r[0])).map(r=>({id:uid(),v:r[0],t:String(r[1]||""),a:String(r[2]||""),hs:+r[3]>=0?+r[3]:-1,he:+r[4]>=0?+r[4]:-1}))});
+}
+const siteBase=()=>location.origin+location.pathname;
+async function shareLink(){return siteBase()+"#p="+await encodeBox(data)}
+/* short address via is.gd (free, no key; JSONP because it doesn't answer cross-site fetches). The short link points at ?p=
+   rather than #p= so nothing depends on how the redirect treats fragments. */
+const shortCache=new Map();
+function jsonpShort(host,long){return new Promise((ok,no)=>{const cb="__sh"+Date.now()+Math.floor(Math.random()*1e5),sc=document.createElement("script");
+  const done=()=>{clearTimeout(timer);delete window[cb];sc.remove()};
+  const timer=setTimeout(()=>{done();no(new Error(host+": 응답 없음"))},5000);
+  window[cb]=r=>{done();const u=r&&r.shorturl;if(u&&/^https:\/\/[\w.]+\/\w+$/.test(u))ok(u);else no(new Error(host+": "+(r&&r.errormessage||"실패")))};
+  sc.onerror=()=>{done();no(new Error(host+": 연결 안 됨"))};
+  sc.src=`https://${host}/create.php?format=json&callback=${cb}&url=${encodeURIComponent(long)}`;document.head.appendChild(sc)})}
+async function dagdShort(long){
+  const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),5000);
+  try{const r=await fetch("https://da.gd/s?url="+encodeURIComponent(long),{signal:ctl.signal,headers:{Accept:"text/plain"}});
+    const txt=(await r.text()).trim();if(r.ok&&/^https:\/\/da\.gd\/\w+$/.test(txt))return txt;throw new Error("da.gd: "+(txt.slice(0,80)||r.status))}
+  catch(e){throw new Error(e.name==="AbortError"?"da.gd: 응답 없음":e.message.startsWith("da.gd")?e.message:"da.gd: 연결 안 됨")}finally{clearTimeout(t)}}
+let shortErrors=[];
+async function shorten(code){
+  if(shortCache.has(code))return shortCache.get(code);
+  const long=siteBase()+"?p="+code;
+  if(!location.protocol.startsWith("http"))throw new Error("file");
+  if(long.length>4800)throw new Error("long");
+  shortErrors=[];
+  for(const make of [()=>jsonpShort("is.gd",long),()=>jsonpShort("v.gd",long),()=>dagdShort(long)]){
+    try{const u=await make();shortCache.set(code,u);return u}catch(e){shortErrors.push(e.message)}}
+  throw new Error("all");
+}
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt=s=>{s=Math.max(0,Math.floor(s||0));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")};
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const reduced=()=>matchMedia("(prefers-reduced-motion: reduce)").matches;
+const hashN=s=>{let h=7;for(const c of String(s))h=(h*31+c.codePointAt(0))>>>0;return h};
+const onColor=(hex,dark="#151515",light="#FFFFFF")=>{const L=lum(hex);return (L+.05)/.05>=1.05/(L+.05)?dark:light};
+function lum(hex){const n=parseInt(hex.slice(1),16),c=[n>>16&255,n>>8&255,n&255].map(v=>{v/=255;return v<=.03928?v/12.92:((v+.055)/1.055)**2.4});return .2126*c[0]+.7152*c[1]+.0722*c[2]}
+/* q: "max" for the big sleeve/label (1280px), "sd" for crate sleeves (640px), "hq" for small thumbnails */
+const ART_CHAIN={max:["maxresdefault","sddefault","hqdefault"],sd:["sddefault","hqdefault"],hq:["hqdefault"]};
+window.__artNext=img=>{const rest=(img.dataset.next||"").split(",").filter(Boolean);if(!rest.length){img.remove();return}
+  const n=rest.shift();img.dataset.next=rest.join(",");img.classList.toggle("wide",n==="maxresdefault");img.src=`https://i.ytimg.com/vi/${img.dataset.v}/${n}.jpg`};
+function art(t,q="hq"){const [first,...rest]=ART_CHAIN[q]||ART_CHAIN.hq;
+  return `<div class="art" style="--h:${hashN(t.v+t.t)%360}"><span class="fb"><b>${esc(t.t||"제목 없음")}</b><i>${esc(t.a)}</i></span><img src="https://i.ytimg.com/vi/${t.v}/${first}.jpg" class="${first==="maxresdefault"?"wide":""}" data-v="${t.v}" data-next="${rest.join(",")}" alt="" decoding="async" onload="if(this.naturalWidth<=120)__artNext(this)" onerror="__artNext(this)"></div>`}
+/* a pasted token can be a video, a playlist, or a video opened inside a playlist */
+function parseInput(s){s=s.trim();const id=parseId(s),lm=s.match(/[?&]list=([\w-]+)/),list=lm?lm[1]:null;
+  if(list&&!/^(RD|UL|LL|WL)/.test(list))return{type:"list",list,v:id};   // mixes, liked and watch-later can't be read
+  return id?{type:"video",v:id}:null}
+/* the IFrame API can read a public playlist's video ids without an API key */
+function waitYT(ms=10000){return new Promise((ok,no)=>{const t0=Date.now();(function poll(){if(window.YT&&YT.Player)return ok();if(Date.now()-t0>ms)return no(new Error("yt"));setTimeout(poll,200)})()})}
+async function resolvePlaylist(list){
+  await waitYT();
+  const host=document.createElement("div");host.style.cssText="position:fixed;left:-9999px;top:0;width:200px;height:120px";
+  const el=document.createElement("div");host.appendChild(el);document.body.appendChild(host);
+  try{
+    return await new Promise((ok,no)=>{let tries=0,failed=false;
+      const pv={playsinline:1,mute:1};if(location.protocol.startsWith("http"))pv.origin=location.origin;
+      const p=new YT.Player(el,{width:200,height:120,playerVars:pv,events:{
+        onReady:()=>{p.cuePlaylist({listType:"playlist",list});
+          (function poll(){if(failed)return;let ids=null;try{ids=p.getPlaylist()}catch(e){}
+            if(ids&&ids.length){ok(ids.slice());try{p.destroy()}catch(e){}return}
+            if(++tries>40){no(new Error("empty"));try{p.destroy()}catch(e){}return}
+            setTimeout(poll,300)})()},
+        onError:()=>{failed=true;no(new Error("err"));try{p.destroy()}catch(e){}}}})});
+  }finally{host.remove()}
+}
+const TRACK_MAX=150;
+function parseId(s){s=s.trim();if(/^[\w-]{11}$/.test(s))return s;
+  const m=s.match(/(?:youtu\.be\/|[?&]v=|\/shorts\/|\/embed\/|\/live\/|\/v\/)([\w-]{11})/);return m?m[1]:null}
+function cleanTitle(raw,author){
+  let t=String(raw||"").replace(/\s*[\[(【][^\])】]*(M\/?V|Official|Lyric|Audio|Music Video|Visualizer|가사|뮤직비디오)[^\])】]*[\])】]/gi,"").replace(/\s+(M\/?V|Official (Music )?Video)$/i,"").trim();
+  let a=String(author||"").replace(/\s*-\s*Topic$/,"").replace(/VEVO$/i,"").replace(/\s*(Official|officialYT)$/i,"").trim();
+  let m=t.match(/^(.+?)\s+[-–—_|]\s+(.+)$/);if(m)return{a:m[1].trim(),t:m[2].trim()};
+  m=t.match(/^(.+?)\s*[‘'"“「](.+?)[’'"”」]/);if(m)return{a:m[1].trim(),t:m[2].trim()};
+  return{a,t};
+}
+async function fetchMeta(v){
+  try{const r=await fetch("https://noembed.com/embed?url="+encodeURIComponent("https://www.youtube.com/watch?v="+v));const j=await r.json();if(j&&j.title)return{...cleanTitle(j.title,j.author_name),vt:j.title,ch:j.author_name||""}}catch(e){}
+  return null;
+}
+let toastT;
+function toast(msg,actLabel,act,force){if(mode==="shared"&&!force)return;$("#toastMsg").textContent=msg;const b=$("#toastAct");b.hidden=!actLabel;b.textContent=actLabel||"";b.onclick=()=>{act&&act();$("#toast").classList.remove("show")};
+  $("#toast").classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>$("#toast").classList.remove("show"),actLabel?5000:2000)}
+
+/* ---------- design: apply + panel ---------- */
+const loadedFonts=new Set(["hahmlet","plex"]);
+function ensureFont(id){if(loadedFonts.has(id))return;const f=[...FONTS,...EN_FONTS,...JP_FONTS].find(x=>x.id===id);if(!f||!f.q)return;loadedFonts.add(id);
+  const l=document.createElement("link");l.rel="stylesheet";l.href=`https://fonts.googleapis.com/css2?family=${f.q}&display=swap`;document.head.appendChild(l)}
+let previewFontsLoaded=false;
+function loadFontPreviews(){if(previewFontsLoaded)return;previewFontsLoaded=true;
+  const txt=[...new Set(FONTS.map(f=>f.n).join("")+"가나다"+EN_FONTS.map(f=>f.n).join("")+"Music"+JP_PREVIEW)].join("");
+  const l=document.createElement("link");l.rel="stylesheet";l.href="https://fonts.googleapis.com/css2?"+[...FONTS,...EN_FONTS,...JP_FONTS].filter(f=>f.q).map(f=>"family="+f.f.replace(/ /g,"+")).join("&")+"&text="+encodeURIComponent(txt)+"&display=swap";document.head.appendChild(l);renderDesign()}
+const JP_PREVIEW="あの日の音楽";
+const fstack=(f,en,jp)=>[en&&en.f?`"${en.f}"`:null,`"${f.f}"`,jp&&jp.f?`"${jp.f}"`:null,
+  f.k==="serif"?'"IBM Plex Sans KR","Hiragino Mincho ProN","Yu Mincho",Georgia,serif':'system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic","Hiragino Sans","Yu Gothic",sans-serif'].filter(Boolean).join(",");
+function langFonts(st,ko){const en=EN_FONTS.find(f=>f.id===st.en),jpId=st.jp==="auto"?JP_AUTO(ko):st.jp,jp=JP_FONTS.find(f=>f.id===jpId);return{en:en&&en.f?en:null,jp}}
+function applyStyle(){
+  const st=data.style,R=document.documentElement.style;
+  for(const[k]of COLOR_FIELDS)R.setProperty("--"+k,st[k]);
+  const ink=onColor(st.bg,"#151515","#F1F1EE");
+  R.setProperty("--ink",ink);R.colorScheme=ink==="#151515"?"light":"dark";
+  R.setProperty("--accent-ink",onColor(st.accent));
+  R.setProperty("--tt-ink",onColor(st.tt,"#151515","#F1F1EE"));
+  R.setProperty("--hl-ink",onColor(st.hl,"#2B2620","#FFFFFF"));
+  const fd=FONTS.find(f=>f.id===st.fd),fb=FONTS.find(f=>f.id===st.fb);
+  const LD=langFonts(st,fd),LB=langFonts(st,fb);
+  [fd.id,fb.id,LD.en?.id,LD.jp?.id,LB.jp?.id].forEach(id=>id&&ensureFont(id));
+  R.setProperty("--f-display",fstack(fd,LD.en,LD.jp));R.setProperty("--dw",fd.w);R.setProperty("--dz",fd.z||1);
+  R.setProperty("--f-body",fstack(fb,LB.en,LB.jp));R.setProperty("--bz",fb.z||1);
+  document.body.dataset.fx=st.fx;document.body.dataset.bs=st.bs;
+}
+function renderDesign(){
+  const st=data.style;
+  $("#themes").innerHTML=THEMES.map(t=>`<button class="chip" type="button" data-theme="${t.id}" aria-pressed="${st.theme===t.id}"><span class="dots"><i style="background:${t.c.bg}"></i><i style="background:${t.c.tt}"></i><i style="background:${t.c.vinyl}"></i><i style="background:${t.c.accent}"></i></span>${t.n}</button>`).join("")+
+    (st.theme==="custom"?`<button class="chip" type="button" aria-pressed="true" disabled>내 맞춤 색</button>`:"");
+  $("#colors").innerHTML=COLOR_FIELDS.map(([k,n])=>`<label class="crow"><input type="color" id="c-${k}" data-k="${k}" value="${st[k]}"><span>${n}</span><code>${st[k].toUpperCase()}</code></label>`).join("");
+  const chip=(f,key)=>`<button class="chip" type="button" data-${key}="${f.id}" aria-pressed="${st[key]===f.id}" style="${previewFontsLoaded||st[key]===f.id?`font-family:${esc(fstack(f))};font-size:${16*(f.z||1)}px`:""}">${f.n}</button>`;
+  $("#fontsD").innerHTML=FONTS.map(f=>chip(f,"fd")).join("");
+  $("#fontsB").innerHTML=FONTS.filter(f=>f.only!=="d").map(f=>chip(f,"fb")).join("");
+  const pf=f=>previewFontsLoaded&&f.f?`font-family:"${esc(f.f)}",sans-serif`:"";
+  const autoJp=JP_FONTS.find(f=>f.id===JP_AUTO(FONTS.find(x=>x.id===st.fd)));
+  $("#fontsEn").innerHTML=EN_FONTS.map(f=>`<button class="chip" type="button" data-en="${f.id}" aria-pressed="${st.en===f.id}" style="${pf(f)}">${f.f?`${f.n}`:f.n}</button>`).join("");
+  $("#fontsJp").innerHTML=JP_FONTS.map(f=>`<button class="chip" type="button" data-jp="${f.id}" aria-pressed="${st.jp===f.id}"><span style="${pf(f.f?f:autoJp)}">${JP_PREVIEW}</span><small style="color:var(--sub);font-size:12px">${f.f?f.n:`자동 · ${autoJp.n}`}</small></button>`).join("");
+  $("#bss").innerHTML=BS.map(([id,n,css])=>`<button class="chip" type="button" data-bs="${id}" aria-pressed="${st.bs===id}" style="padding:7px"><span class="bprev" style="${css}">${n}</span></button>`).join("");
+  $("#fxs").innerHTML=FX.map(([id,n])=>`<button class="chip" type="button" data-fx="${id}" aria-pressed="${st.fx===id}">${n}</button>`).join("");
+}
+function styleChanged(rerender=true){data.style=cleanStyle(data.style);applyStyle();save();if(rerender)renderDesign()}
+$(".design").addEventListener("click",e=>{const b=e.target.closest(".chip");if(!b||b.disabled)return;const st=data.style;
+  if(b.dataset.theme){Object.assign(st,THEMES.find(t=>t.id===b.dataset.theme).c);toast(`${b.textContent.trim()} 테마로 바꿨어요`)}
+  if(b.dataset.fd)st.fd=b.dataset.fd;
+  if(b.dataset.fb)st.fb=b.dataset.fb;
+  if(b.dataset.en)st.en=b.dataset.en;
+  if(b.dataset.jp)st.jp=b.dataset.jp;
+  if(b.dataset.bs)st.bs=b.dataset.bs;
+  if(b.dataset.fx){st.fx=b.dataset.fx;if(isPlaying&&st.fx!=="none")toast("재생 중에 효과가 보여요")}
+  styleChanged()});
+$("#colors").addEventListener("input",e=>{const k=e.target.dataset.k;if(!k)return;data.style[k]=e.target.value;e.target.parentElement.querySelector("code").textContent=e.target.value.toUpperCase();styleChanged(false)});
+$("#colors").addEventListener("change",()=>renderDesign());
+$("#resetStyle").onclick=()=>{const old={...data.style};data.style=DEF_STYLE();styleChanged();toast("기본 디자인으로 되돌렸어요","되돌리기",()=>{data.style=old;styleChanged()})};
+new IntersectionObserver((en,ob)=>{if(en.some(x=>x.isIntersecting)){loadFontPreviews();ob.disconnect()}},{rootMargin:"300px"}).observe($(".design"));
+
+/* ---------- crate (3D box) ---------- */
+let cur=0, opened=false, playingId=null, isPlaying=false, hlOnly=false;
+const world=$("#world"), stage=$("#stage"), sleevesEl=$("#sleeves");
+let geo={};
+const WIN_BACK=5,WIN_FRONT=2;   // records visible behind / flipped in front of the current one
+function measure(){
+  const n=data.tracks.length, w=stage.clientWidth;
+  const S=Math.round(Math.max(140,Math.min(220,w*.42)));
+  const W=S+30, H=Math.round(S*.6);
+  const front=Math.round(S*.45);            // room in front so flipped records can lean on the rim
+  const D=Math.round(Math.max(S*.9,front+50+WIN_BACK*16));   // same box for 3 records or 150
+  const gap=Math.min(18,(D-front-50)/WIN_BACK);
+  geo={S,W,H,D,gap,front};
+  for(const[k,v]of Object.entries({S,W,H,D}))stage.style.setProperty("--"+k,v+"px");
+  stage.style.setProperty("--stageH",Math.round(S*2.05)+"px");
+}
+function buildCrate(){
+  measure();
+  sleevesEl.innerHTML=data.tracks.map((t,i)=>`<div class="sleeve" data-i="${i}" style="--i:${i}"><div class="card">${art(t,"sd")}${t.hs>=0?`<div class="hype"><b>BEST</b>${fmt(t.hs)}</div>`:""}</div></div>`).join("");
+  cur=Math.min(cur,Math.max(0,data.tracks.length-1));
+  layoutCrate();
+  if(mode==="owner"&&shelf)renderMinis();
+}
+function layoutCrate(){
+  const {S,H,D,gap,front}=geo, yRest=H/2-S/2;
+  [...sleevesEl.children].forEach((el,i)=>{
+    const t=data.tracks[i], slot=opened?i-cur:i, z0=D/2-22-front;
+    const away=slot>WIN_BACK||slot<-WIN_FRONT, sc=clamp(slot,-WIN_FRONT,WIN_BACK+1);
+    let dy=0,rx=0,z=sc>=0?z0-sc*gap:z0+(-sc)*gap*1.6;
+    if(!opened){dy=S*.12;el.style.opacity=0}else el.style.opacity=away?0:"";
+    el.classList.toggle("away",away);
+    if(opened){ if(sc<0)rx=-Math.atan(Math.max(4,front+14-(-sc)*gap*1.6)/H)*180/Math.PI; else if(sc===0)dy=-S*.3; else rx=4; }
+    el.style.transform=`translate3d(0,${yRest+dy}px,${z}px) rotateX(${rx}deg)`;
+    el.classList.toggle("cur",i===cur);
+    el.classList.toggle("taken",t.id===playingId);
+    let tag=el.querySelector(".playing-tag");
+    if(t.id===playingId&&!tag){tag=document.createElement("span");tag.className="playing-tag";tag.textContent="ON AIR";el.querySelector(".card").appendChild(tag)}
+    if(t.id!==playingId&&tag)tag.remove();
+  });
+  const n=data.tracks.length,t=data.tracks[cur];
+  $("#tagT").textContent=data.title||"LP BOX";
+  $("#tagN").textContent=n?`${n} RECORDS`:"EMPTY";
+  $("#count").textContent=n?`${n}장`:"";
+  $("#crateNav").hidden=!n; $("#hint").textContent=n?(mode==="owner"?"상자를 옆으로 밀면 다른 박스로 넘어가요. 레코드는 화살표나 휠로 넘기고, 앞에 선 레코드를 누르면 턴테이블에 올라가요":"옆으로 밀거나 휠을 굴려 넘기고, 앞에 선 레코드를 누르면 턴테이블에 올라가요"):(mode==="owner"?"아래에서 유튜브 링크를 넣으면 이 상자에 레코드가 들어와요":"비어 있는 상자예요");
+  if(t){$("#pickT").textContent=`${t.t||"제목 없음"}${t.a?" · "+t.a:""}`;$("#pickN").textContent=`${cur+1} / ${n}`;
+    $("#pickBtn").textContent=t.id===playingId?(isPlaying?"재생 중":"턴테이블에 있음"):"꺼내서 듣기";}
+}
+function flip(d){const n=data.tracks.length;if(!n)return;const c=clamp(cur+d,0,n-1);if(c!==cur){cur=c;layoutCrate()}}
+sleevesEl.addEventListener("click",e=>{const s=e.target.closest(".sleeve");if(!s||!opened||Date.now()-justSwiped<350)return;const i=+s.dataset.i;if(i!==cur){cur=i;layoutCrate()}else pick(i)});
+let wheelLock=0;
+stage.addEventListener("wheel",e=>{const horiz=Math.abs(e.deltaX)>Math.abs(e.deltaY);
+  if(horiz&&mode==="owner"){if(Math.abs(e.deltaX)<12)return;e.preventDefault();const now=Date.now();if(now-wheelLock<700)return;wheelLock=now;boxStep(e.deltaX>0?1:-1);return}
+  if(!opened||!data.tracks.length)return;const d=horiz?e.deltaX:e.deltaY;if(Math.abs(d)<4)return;
+  e.preventDefault();const now=Date.now();if(now-wheelLock<140)return;wheelLock=now;flip(d>0?1:-1)},{passive:false});
+stage.addEventListener("keydown",e=>{if(e.key==="ArrowRight"||e.key==="ArrowDown"){e.preventDefault();flip(1)}else if(e.key==="ArrowLeft"||e.key==="ArrowUp"){e.preventDefault();flip(-1)}else if(e.key==="Enter"||e.key===" "){e.preventDefault();if(data.tracks.length)pick(cur)}});
+let tx=null,ty0=null;
+stage.addEventListener("touchstart",e=>{tx=e.touches[0].clientX;ty0=e.touches[0].clientY},{passive:true});
+stage.addEventListener("touchend",e=>{if(tx==null)return;const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty0;tx=null;
+  if(Math.abs(dx)>36&&Math.abs(dx)>Math.abs(dy)){justSwiped=Date.now();if(mode==="owner")boxStep(dx<0?1:-1);else flip(dx<0?1:-1)}});
+/* mouse drag sideways does the same as a swipe */
+let mdx=null;
+stage.addEventListener("pointerdown",e=>{if(e.pointerType==="mouse")mdx=e.clientX});
+addEventListener("pointerup",e=>{if(mdx==null||e.pointerType!=="mouse")return;const dx=e.clientX-mdx;mdx=null;
+  if(Math.abs(dx)>70){justSwiped=Date.now();if(mode==="owner")boxStep(dx<0?1:-1);else flip(dx<0?1:-1)}});
+let justSwiped=0;
+$("#cPrev").onclick=()=>flip(-1);$("#cNext").onclick=()=>flip(1);
+$("#pickBtn").onclick=()=>{const t=data.tracks[cur];if(!t)return;if(t.id===playingId)togglePlay();else pick(cur)};
+function openBox(){if(opened)return;opened=true;world.classList.add("open");layoutCrate();setTimeout(()=>world.classList.remove("intro"),2600)}
+
+/* ---------- turntable: spin with spin-up / spin-down ---------- */
+const tt=$("#tt"), rec=$("#record"), coverEl=$("#cover"), armEl=$("#arm");
+const spin=$("#disc").animate([{transform:"rotate(0deg)"},{transform:"rotate(360deg)"}],{duration:1800,iterations:Infinity});
+spin.playbackRate=0;
+let spinRate=0,spinTarget=0,spinRaf=0,rpm=1;
+function setSpin(on){spinTarget=on?rpm:0;if(reduced()){spinRate=spinTarget;spin.playbackRate=spinRate;return}if(!spinRaf)spinRaf=requestAnimationFrame(stepSpin)}
+function stepSpin(){const d=spinTarget-spinRate,step=spinTarget>spinRate?.035:.022;
+  spinRate=Math.abs(d)<=step?spinTarget:spinRate+Math.sign(d)*step;spin.playbackRate=spinRate;
+  spinRaf=spinRate===spinTarget?0:requestAnimationFrame(stepSpin)}
+document.querySelectorAll(".rpm").forEach(b=>b.onclick=()=>{
+  const all=[...document.querySelectorAll(".rpm")],pick=b.getAttribute("aria-pressed")==="true"?all.find(x=>x!==b):b;
+  rpm=pick.dataset.r==="45"?1.35:1;all.forEach(x=>x.setAttribute("aria-pressed",x===pick));if(spinTarget)setSpin(true)});
+
+/* tonearm: angle 0 = straight down from the pivot. Outer groove ≈ 23.5°, run-out ≈ 44° (measured on this plinth). */
+const ARM={rest:4,on:19,start:23.5,end:44,max:48};
+let armAngle=ARM.rest, armDrag=false, armMoved=false;
+function setArm(a,how){armAngle=a;armEl.classList.remove("instant","track");if(how)armEl.classList.add(how);armEl.style.transform=`rotate(${a}deg)`;
+  armEl.setAttribute("aria-valuenow",Math.round(clamp((a-ARM.start)/(ARM.end-ARM.start),0,1)*100))}
+function armForProgress(){if(!dur||!ytReady)return ARM.start;let c=0;try{c=player.getCurrentTime()}catch(e){}return ARM.start+clamp(c/dur,0,1)*(ARM.end-ARM.start)}
+function pointerAngle(e){const r=$(".pivot").getBoundingClientRect(),px=r.left+r.width/2,py=r.top+r.height/2;   // only differences of this are used, so a turned player works too
+  return Math.atan2(-(e.clientX-px),e.clientY-py)*180/Math.PI}
+armEl.addEventListener("pointerdown",e=>{e.preventDefault();armEl.setPointerCapture(e.pointerId);armDrag=true;armMoved=false;armEl.classList.add("drag");tt.classList.remove("hint");armEl._a0=armAngle;armEl._p0=pointerAngle(e)});
+armEl.addEventListener("pointermove",e=>{if(!armDrag)return;const a=clamp(armEl._a0+(pointerAngle(e)-armEl._p0),0,ARM.max);if(Math.abs(a-armEl._a0)>(e.pointerType==="touch"?4:1.5))armMoved=true;setArm(a,"instant")});
+const armUp=()=>{if(!armDrag)return;armDrag=false;armEl.classList.remove("drag");if(!armMoved){togglePlay();return}dropArm(armAngle)};
+armEl.addEventListener("pointerup",armUp);armEl.addEventListener("pointercancel",armUp);
+armEl.addEventListener("keydown",e=>{
+  if(e.key==="Enter"||e.key===" "){e.preventDefault();togglePlay()}
+  if(e.key==="ArrowLeft"||e.key==="ArrowRight"){e.preventDefault();const a=clamp(armAngle+(e.key==="ArrowRight"?-2:2),0,ARM.max);setArm(a,"instant");clearTimeout(armEl._k);armEl._k=setTimeout(()=>dropArm(armAngle),500)}});
+function dropArm(a){
+  const t=data.tracks[playingIdx()];
+  if(a<ARM.on){if(isPlaying&&ytReady)player.pauseVideo();isPlaying=false;setArm(ARM.rest);renderNow();return}
+  if(!t){setArm(ARM.rest);toast("먼저 상자에서 레코드를 골라 올려 주세요");return}
+  if(!ytReady){setArm(ARM.rest);toast("유튜브 플레이어를 불러오는 중이에요. 잠시 뒤 다시 올려 주세요");return}
+  const frac=clamp((a-ARM.start)/(ARM.end-ARM.start),0,.985);
+  if(dur){player.seekTo(frac*dur,true);if(frac>.02)toast(`${fmt(frac*dur)}부터 들려요`)}
+  player.playVideo();isPlaying=true;setArm(Math.max(a,ARM.start),"track");renderNow();
+}
+
+/* ---------- now playing ---------- */
+const playingIdx=()=>data.tracks.findIndex(t=>t.id===playingId);
+function setCover(t){coverEl.innerHTML=t?art(t,"max"):"";$("#label").innerHTML=t?art(t,"max"):"";$("#visual").classList.toggle("has",!!t)}
+let lastNowId=null;
+function renderNow(){
+  const t=data.tracks[playingIdx()];
+  $("#nowBox").hidden=!t&&mode==="shared";      // recipients see no instructions, only the record once it's on
+  $("#nowK").textContent=t?(isPlaying?"NOW PLAYING":"ON THE DECK"):"READY";
+  const nt=$("#nowT");nt.textContent=t?(t.t||"제목 불러오는 중"):(data.tracks.length?"아래 상자에서 레코드를 골라 보세요":"아직 상자가 비어 있어요");
+  if((t?.id||null)!==lastNowId){lastNowId=t?.id||null;nt.classList.remove("swap");void nt.offsetWidth;nt.classList.add("swap")}
+  $("#nowA").textContent=t?(t.a||""):(data.tracks.length?"고른 레코드가 턴테이블에 올라가면 재생돼요":"유튜브 링크로 레코드를 넣어 보세요");
+  const has=t&&t.hs>=0;
+  $("#hlJump").disabled=!has;$("#hlJumpT").textContent=has?(t.he>t.hs?`${fmt(t.hs)}–${fmt(t.he)}`:fmt(t.hs)):"없음";
+  $("#marker").style.opacity=t?1:.5;
+  $("#playIco").innerHTML=isPlaying?'<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>':'<path d="M7 4v16l13-8z"/>';
+  $("#playBtn").setAttribute("aria-label",isPlaying?"일시정지":"재생");
+  tt.classList.toggle("on",isPlaying);document.body.classList.toggle("playing",isPlaying);
+  setSpin(isPlaying);
+  if(t)$("#glow").style.setProperty("--gh",hashN(t.v+t.t)%360);
+  if(!armDrag&&!busy){ if(isPlaying)setArm(armForProgress(),"track"); else if(armAngle>=ARM.on&&!t)setArm(ARM.rest); }
+  $("#ttCap").textContent=!t?(data.tracks.length?"아래 상자에서 레코드를 고르면 턴테이블에 올라가요":""):(isPlaying?"톤암을 들어 올리면 멈추고, 판 위 다른 곳에 놓으면 그 부분부터 들려요":"톤암을 끌어 판 위에 올려 놓으면 재생돼요");
+  drawMark();setVidMeta();$(".vid").classList.toggle("off",!t);
+  if(playingId){const s=$("#pickBtn");const ct=data.tracks[cur];if(ct&&ct.id===playingId)s.textContent=isPlaying?"재생 중":"턴테이블에 있음"}
+  document.title=t?`${t.t} · ${data.title}`:data.title||"LP BOX";
+}
+function setVidMeta(){
+  const t=data.tracks[playingIdx()];let vt=t?.vt||"",ch=t?.ch||"";
+  if(t&&ytReady){try{const d=player.getVideoData();if(d&&d.video_id===t.v&&d.title){vt=d.title;ch=d.author||ch;t.vt=vt;t.ch=ch}}catch(e){}}
+  $("#vT").textContent=t?vt:"";$("#vC").textContent=t?ch:"";
+}
+/* floating notes + sound rings while playing */
+let fxTick=0;
+setInterval(()=>{
+  if(!isPlaying||document.hidden||reduced()||data.style.fx==="none")return;
+  const fx=$("#fx"),r=fx.getBoundingClientRect(),p=rec.getBoundingClientRect();if(!p.width)return;
+  fxTick++;
+  if(fxTick%4===0){const g=document.createElement("span");g.className="fx-ring";
+    const[gx,gy]=localPoint(r,p.left+p.width/2,p.top+p.height/2);
+    Object.assign(g.style,{left:gx-p.width/2+"px",top:gy-p.height/2+"px",width:p.width+"px",height:p.height+"px"});
+    g.addEventListener("animationend",()=>g.remove());fx.appendChild(g)}
+  if(!["notes","both"].includes(data.style.fx))return;
+  const hue=getComputedStyle($("#glow")).getPropertyValue("--gh")||220,scale=p.width/320;
+  for(let k=0,m=Math.random()<.45?2:1;k<m;k++){
+    const n=document.createElement("span");n.className="fx-note";n.textContent="♪♫♩♬♪♫"[Math.floor(Math.random()*6)];
+    const ang=Math.PI*(.05+Math.random()*.9),[cx,cy]=localPoint(r,p.left+p.width/2,p.top+p.height/2);
+    n.style.left=(cx+Math.cos(ang)*p.width*.46)+"px";n.style.top=(cy-Math.sin(ang)*p.height*.46)+"px";
+    n.style.setProperty("--nx",(Math.random()*140-70)+"px");n.style.setProperty("--ny",-(160+Math.random()*140)*Math.max(.7,scale)+"px");n.style.setProperty("--nr",(Math.random()*70-35)+"deg");
+    n.style.fontSize=((20+Math.random()*22)*Math.max(.75,scale))+"px";
+    n.style.color=Math.random()<.5?"var(--accent)":`hsl(${hue} 70% 52%)`;n.style.animationDelay=(k*160)+"ms";
+    n.addEventListener("animationend",()=>n.remove());fx.appendChild(n)}
+},340);
+
+/* when the player is turned sideways with CSS, screen offsets have to be turned back into the player's own axes */
+const turned=()=>document.body.classList.contains("fakeland");
+const toLocal=(dx,dy)=>turned()?[dy,-dx]:[dx,dy];
+function localPoint(r,x,y){return turned()?[y-r.top,r.right-x]:[x-r.left,y-r.top]}
+function slideVec(){const a=coverEl.getBoundingClientRect(),b=rec.getBoundingClientRect();
+  const[dx,dy]=toLocal((a.left+a.width/2)-(b.left+b.width/2),(a.top+a.height/2)-(b.top+b.height/2));
+  return{dx,dy,s:a.width*.94/b.width}}
+async function recordIn(){rec.classList.remove("off");if(reduced())return;const{dx,dy,s}=slideVec();
+  await rec.animate([{transform:`translate(${dx}px,${dy}px) scale(${s})`},{transform:"translate(2%,0) scale(1.01)",offset:.82},{transform:"none"}],{duration:800,easing:"cubic-bezier(.2,.75,.2,1)"}).finished.catch(()=>{})}
+async function recordOut(){if(rec.classList.contains("off"))return;setArm(ARM.rest);
+  if(!reduced()){const{dx,dy,s}=slideVec();await rec.animate([{transform:"none"},{transform:`translate(${dx}px,${dy}px) scale(${s})`}],{duration:420,easing:"cubic-bezier(.5,0,.8,.4)"}).finished.catch(()=>{})}
+  rec.classList.add("off")}
+let busy=false;
+async function pick(i,fromCrate=true){
+  const t=data.tracks[i];if(!t||busy)return;
+  if(t.id===playingId){togglePlay();return}
+  busy=true;
+  playingId=t.id;isPlaying=false;cur=i;$("#err").hidden=true;dur=0;
+  cue(t);                                  // start loading right away, inside the click
+  layoutCrate();renderNow();
+  const out=recordOut();
+  if(fromCrate&&!reduced()){
+    const d=$("#deck").getBoundingClientRect();
+    if(d.top<-40||d.top>innerHeight*.5){$("#deck").scrollIntoView({behavior:"smooth",block:"start"});await wait(480)}
+    const card=sleevesEl.children[i]?.querySelector(".card");
+    if(card){
+      coverEl.classList.add("empty");
+      const vis=$("#visual");if(!vis.classList.contains("has")){vis.classList.add("has");await wait(680)}  // turntable slides over, sleeve slot opens
+      const a=card.getBoundingClientRect();await out;
+      const b=coverEl.getBoundingClientRect();
+      const fly=document.createElement("div");fly.className="fly";fly.innerHTML=art(t,"max");
+      Object.assign(fly.style,{left:a.left+"px",top:a.top+"px",width:a.width+"px",height:a.height+"px"});document.body.appendChild(fly);
+      const s=b.width/a.width,dx=b.left-a.left,dy=b.top-a.top;
+      await fly.animate([{transform:"none"},{transform:`translate(${dx*.45}px,${dy*.45-70}px) scale(${(1+s)/2*1.06}) rotate(-8deg)`,offset:.5},{transform:`translate(${dx}px,${dy+b.height*.03}px) scale(${s}) rotate(-3deg)`}],{duration:900,easing:"cubic-bezier(.45,0,.2,1)",fill:"forwards"}).finished.catch(()=>{});
+      setCover(t);coverEl.classList.remove("empty");fly.remove();
+    }else{await out;setCover(t)}
+  }else{await out;if(!reduced())coverEl.animate([{opacity:0},{opacity:1}],{duration:250});setCover(t)}
+  await recordIn();
+  busy=false;
+  setArm(isPlaying?armForProgress():ARM.start,isPlaying?"track":null);   // needle drops onto the lead-in
+  renderNow();
+}
+
+/* ---------- YouTube ---------- */
+let player=null,ytReady=false,queued=null,dur=0;
+function cue(t){const q={videoId:t.v,startSeconds:hlOnly&&t.hs>=0?t.hs:0};if(ytReady){try{player.loadVideoById(q)}catch(e){}}else queued=q}
+window.onYouTubeIframeAPIReady=()=>{
+  const pv={playsinline:1,rel:0,modestbranding:1,controls:1};if(location.protocol.startsWith("http"))pv.origin=location.origin;
+  player=new YT.Player("yt",{width:"100%",height:"100%",playerVars:pv,events:{
+    onReady:()=>{ytReady=true;if(queued){player.loadVideoById(queued);queued=null}},
+    onStateChange:e=>{
+      const s=e.data,t=data.tracks[playingIdx()];
+      setVidMeta();
+      if(s===1){isPlaying=true;$("#err").hidden=true;
+        if(t&&!t.t){try{const vd=player.getVideoData();const m=cleanTitle(vd.title,vd.author);t.t=m.t;t.a=t.a||m.a;save();refreshAll()}catch(_){}}}
+      else if(s===2||s===5||s===-1){isPlaying=false;if(!armDrag&&!busy&&s===2)setArm(ARM.rest)}
+      else if(s===0){isPlaying=false;renderNow();next(true);return}
+      renderNow();
+    },
+    onError:e=>{isPlaying=false;setArm(ARM.rest);renderNow();const t=data.tracks[playingIdx()];if(!t)return;
+      const why=(e.data===101||e.data===150)?"이 영상은 올린 사람이 다른 사이트에서 재생하지 못하게 막아 두었어요. 공식 오디오나 다른 업로드 링크로 바꿔 보세요.":"이 영상을 찾을 수 없어요. 삭제되었거나 비공개일 수 있어요.";
+      const err=$("#err");err.innerHTML=`${why} <a href="https://www.youtube.com/watch?v=${t.v}" target="_blank" rel="noopener">유튜브에서 열기 ↗</a>`;err.hidden=false}
+  }});
+};
+(function(){if(location.protocol==="file:")$("#fileWarn").hidden=false;const s=document.createElement("script");s.src="https://www.youtube.com/iframe_api";s.async=true;document.head.appendChild(s)})();
+
+function togglePlay(){
+  if(playingIdx()<0){if(data.tracks.length)pick(cur);return}
+  if(!ytReady){toast("유튜브 플레이어를 불러오는 중이에요");return}
+  const st=player.getPlayerState?.();
+  if(st===1){player.pauseVideo();isPlaying=false;setArm(ARM.rest)}
+  else{player.playVideo();isPlaying=true;setArm(armForProgress(),null)}
+  renderNow();
+}
+async function next(auto){const i=playingIdx();if(i<0)return;
+  if(i<data.tracks.length-1)pick(i+1,false);
+  else if(auto){toast("박스의 마지막 레코드까지 들었어요");setArm(ARM.rest)}}
+function prev(){const i=playingIdx();if(i<0)return;
+  const c=ytReady?player.getCurrentTime():0;
+  if(c>4||i===0){if(ytReady)player.seekTo(hlOnly&&data.tracks[i].hs>=0?data.tracks[i].hs:0,true)}else pick(i-1,false)}
+$("#playBtn").onclick=togglePlay;$("#nextBtn").onclick=()=>next(false);$("#prevBtn").onclick=prev;
+
+/* progress + highlight */
+function drawMark(){const t=data.tracks[playingIdx()],m=$("#mark");
+  if(!t||t.hs<0||!dur){m.hidden=true;return}
+  const end=t.he>t.hs?t.he:t.hs+1;m.hidden=false;m.style.left=(t.hs/dur*100)+"%";m.style.width=Math.max(.6,(end-t.hs)/dur*100)+"%"}
+setInterval(()=>{
+  if(!ytReady||playingIdx()<0)return;
+  let c=0;try{c=player.getCurrentTime()||0;const d=player.getDuration()||0;if(d&&d!==dur){dur=d;drawMark()}}catch(e){return}
+  const p=dur?c/dur*100:0;$("#fill").style.width=p+"%";$("#knob").style.left=p+"%";$("#bar").setAttribute("aria-valuenow",Math.round(p));
+  $("#tCur").textContent=fmt(c);$("#tDur").textContent=fmt(dur);
+  if(isPlaying&&!armDrag&&!busy)setArm(armForProgress(),"track");
+  const t=data.tracks[playingIdx()];
+  if(hlOnly&&isPlaying&&t&&t.he>t.hs&&c>=t.he)next(true);
+},250);
+function seekFrom(e){if(!ytReady||!dur)return;const r=$("#bar").getBoundingClientRect();
+  const f=turned()?(e.clientY-r.top)/r.height:(e.clientX-r.left)/r.width;player.seekTo(clamp(f,0,1)*dur,true)}
+$("#bar").addEventListener("pointerdown",e=>{seekFrom(e);const mv=ev=>seekFrom(ev),up=()=>{removeEventListener("pointermove",mv);removeEventListener("pointerup",up)};addEventListener("pointermove",mv);addEventListener("pointerup",up)});
+$("#bar").addEventListener("keydown",e=>{if(!ytReady)return;const c=player.getCurrentTime();if(e.key==="ArrowRight")player.seekTo(c+5,true);if(e.key==="ArrowLeft")player.seekTo(Math.max(0,c-5),true)});
+$("#hlJump").onclick=()=>{const t=data.tracks[playingIdx()];if(!t||t.hs<0||!ytReady)return;player.seekTo(t.hs,true);player.playVideo()};
+$("#hlOnly").onclick=e=>{hlOnly=!hlOnly;e.currentTarget.setAttribute("aria-pressed",hlOnly);
+  toast(hlOnly?"하이라이트가 있는 곡은 그 부분만 듣고 다음 곡으로 넘어가요":"곡을 처음부터 끝까지 들어요");
+  const t=data.tracks[playingIdx()];if(hlOnly&&t&&t.hs>=0&&ytReady){const c=player.getCurrentTime();if(c<t.hs||(t.he>t.hs&&c>t.he))player.seekTo(t.hs,true)}};
+function curTime(){return ytReady&&playingIdx()>=0?player.getCurrentTime():null}
+$("#markS").onclick=()=>{const t=data.tracks[playingIdx()],c=curTime();if(!t||c==null){toast("먼저 레코드를 재생해 주세요");return}
+  t.hs=Math.floor(c);if(t.he<=t.hs)t.he=-1;save();refreshAll();toast(`하이라이트 시작: ${fmt(t.hs)} · 끝나는 곳에서 '여기까지'를 눌러 주세요`)};
+$("#markE").onclick=()=>{const t=data.tracks[playingIdx()],c=curTime();if(!t||c==null){toast("먼저 레코드를 재생해 주세요");return}
+  if(t.hs<0){toast("'지금부터'로 시작 지점을 먼저 찍어 주세요");return}
+  if(c<=t.hs+1){toast("끝 지점은 시작 지점보다 뒤여야 해요");return}
+  t.he=Math.ceil(c);save();refreshAll();toast(`하이라이트 ${fmt(t.hs)}–${fmt(t.he)} 저장했어요`)};
+$("#markX").onclick=()=>{const t=data.tracks[playingIdx()];if(!t||t.hs<0)return;const o=[t.hs,t.he];t.hs=-1;t.he=-1;save();refreshAll();
+  toast("하이라이트를 지웠어요","되돌리기",()=>{t.hs=o[0];t.he=o[1];save();refreshAll()})};
+
+/* ---------- manager ---------- */
+function renderHeader(){$("#boxTitle").textContent=data.title||"이름 없는 LP 박스";$("#boxBy").textContent=data.by?`by ${data.by}`:"";
+  const bi=$("#boxIntro");bi.textContent=data.intro;bi.hidden=!data.intro.trim();$("#inIntro").value=data.intro;
+  $("#inTitle").value=data.title;$("#inBy").value=data.by}
+function renderList(){
+  const L=$("#list");if(data.linked&&mode==="owner"){renderLinkedList(L);return}
+  if(!data.tracks.length){L.innerHTML=`<li class="empty">아직 레코드가 없어요. 위에 유튜브 링크를 붙여넣어 보세요.</li>`;return}
+  L.innerHTML=data.tracks.map((t,i)=>`<li class="item" data-id="${t.id}" style="animation-delay:${Math.min(i,10)*30}ms">
+    <div class="th">${art(t)}</div>
+    <input class="in t" id="t-${t.id}" value="${esc(t.t)}" placeholder="곡 제목" aria-label="곡 제목">
+    <input class="in a" id="a-${t.id}" value="${esc(t.a)}" placeholder="가수" aria-label="가수">
+    <span class="hlinfo${t.hs>=0?" on":""}">${t.hs>=0?"★ "+fmt(t.hs)+(t.he>t.hs?"–"+fmt(t.he):""):"하이라이트 없음"}</span>
+    <span class="acts"><button class="sq" data-act="up" aria-label="위로" ${i?"":"disabled"}>↑</button><button class="sq" data-act="down" aria-label="아래로" ${i<data.tracks.length-1?"":"disabled"}>↓</button><button class="sq" data-act="del" aria-label="빼기">✕</button></span>
+  </li>`).join("");
+}
+function renderLinkedList(L){const h=new Set(data.hidden),who=whoOf(data),E=data.extra;
+  const hl=t=>`<span class="hlinfo${t.hs>=0?" on":""}">${t.hs>=0?"★ "+fmt(t.hs)+(t.he>t.hs?"–"+fmt(t.he):""):"하이라이트 없음"}</span>`;
+  L.innerHTML=`<li class="grp">${esc(who)}의 곡 · ${data.base.length}곡${h.size?` (${data.base.filter(t=>h.has(t.v)).length}곡 숨김)`:""}</li>`+
+    (data.base.length?data.base.map(t=>`<li class="item ro${h.has(t.v)?" hid":""}" data-id="${t.id}">
+      <div class="th">${art(t)}</div>
+      <input class="in t" value="${esc(t.t)}" readonly tabindex="-1" aria-label="곡 제목">
+      <input class="in a" value="${esc(t.a)}" readonly tabindex="-1" aria-label="가수">${hl(t)}
+      <span class="acts"><button class="btn sm" type="button" data-act="hide" aria-pressed="${h.has(t.v)}">${h.has(t.v)?"보이기":"숨기기"}</button></span></li>`).join(""):`<li class="sub">아직 곡이 없어요.</li>`)+
+    `<li class="grp">내가 더한 곡${E.length?" · "+E.length+"곡":""}</li>`+
+    (E.length?E.map((t,i)=>`<li class="item" data-id="${t.id}">
+      <div class="th">${art(t)}</div>
+      <input class="in t" id="t-${t.id}" value="${esc(t.t)}" placeholder="곡 제목" aria-label="곡 제목">
+      <input class="in a" id="a-${t.id}" value="${esc(t.a)}" placeholder="가수" aria-label="가수">${hl(t)}
+      <span class="acts"><button class="sq" data-act="up" aria-label="위로" ${i?"":"disabled"}>↑</button><button class="sq" data-act="down" aria-label="아래로" ${i<E.length-1?"":"disabled"}>↓</button><button class="sq" data-act="del" aria-label="빼기">✕</button></span></li>`).join("")
+      :`<li class="sub">위에 유튜브 링크를 넣으면 ${esc(who)}의 곡 뒤에 이어서 들어가요. 내가 더한 곡은 나에게만 보여요.</li>`)}
+function refreshAll(){linkedUI();renderHeader();buildCrate();renderList();renderNow();renderBlocks();renderBlockEditor();renderBoxStickers()}
+$("#list").addEventListener("input",e=>{const li=e.target.closest(".item");if(!li)return;const t=data.tracks.find(x=>x.id===li.dataset.id);
+  if(e.target.classList.contains("t"))t.t=e.target.value;else t.a=e.target.value;save();layoutCrate();renderNow();
+  clearTimeout(renderList._t);renderList._t=setTimeout(()=>{const s=sleevesEl.children[data.tracks.indexOf(t)];if(s)s.querySelector(".fb").innerHTML=`<b>${esc(t.t)}</b><i>${esc(t.a)}</i>`},300)});
+$("#list").addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(!b)return;const id=b.closest(".item").dataset.id;
+  if(data.linked){const a=b.dataset.act,E=data.extra,j=E.findIndex(x=>x.id===id);
+    if(a==="hide"){const t=data.base.find(x=>x.id===id);if(!t)return;const k=data.hidden.indexOf(t.v);if(k<0)data.hidden.push(t.v);else data.hidden.splice(k,1);
+      relink(data);save();refreshAll();toast(k<0?`'${t.t||"레코드"}'를 내 목록에서 숨겼어요`:`'${t.t||"레코드"}'를 다시 보이게 했어요`);return}
+    if(j<0)return;
+    if(a==="up"&&j>0)[E[j-1],E[j]]=[E[j],E[j-1]];
+    if(a==="down"&&j<E.length-1)[E[j+1],E[j]]=[E[j],E[j+1]];
+    if(a==="del"){const [t]=E.splice(j,1);relink(data);save();refreshAll();toast(`'${t.t||"레코드"}'를 뺐어요`,"되돌리기",()=>{E.splice(j,0,t);relink(data);save();refreshAll()});return}
+    relink(data);save();refreshAll();return}
+  const i=data.tracks.findIndex(x=>x.id===id);
+  const a=b.dataset.act,T=data.tracks;
+  if(a==="up"&&i>0)[T[i-1],T[i]]=[T[i],T[i-1]];
+  if(a==="down"&&i<T.length-1)[T[i+1],T[i]]=[T[i],T[i+1]];
+  if(a==="del"){const [t]=T.splice(i,1);save();refreshAll();toast(`'${t.t||"레코드"}'를 뺐어요`,"되돌리기",()=>{T.splice(i,0,t);save();refreshAll()});return}
+  save();refreshAll()});
+$("#inTitle").addEventListener("input",e=>{data.title=e.target.value;save();$("#boxTitle").textContent=data.title||"이름 없는 LP 박스";$("#tagT").textContent=data.title||"LP BOX"});
+$("#inIntro").addEventListener("input",e=>{data.intro=e.target.value;save();const bi=$("#boxIntro");bi.textContent=data.intro;bi.hidden=!data.intro.trim()});
+$("#inBy").addEventListener("input",e=>{data.by=e.target.value;save();$("#boxBy").textContent=data.by?`by ${data.by}`:""});
+const inUrl=$("#inUrl");
+inUrl.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("#addForm").requestSubmit()}});
+let adding=false;
+$("#addForm").addEventListener("submit",async e=>{
+  e.preventDefault();if(adding)return;
+  const parts=inUrl.value.split(/[\s,]+/).filter(Boolean),items=parts.map(parseInput).filter(Boolean);
+  if(!items.length){toast(parts.length?"유튜브 링크를 찾지 못했어요. youtube.com이나 youtu.be 주소인지 확인해 주세요":"유튜브 링크를 붙여넣어 주세요");return}
+  const btn=$("#addForm button[type=submit]"),label=btn.textContent;
+  adding=true;btn.disabled=true;
+  const ids=[];let lists=0,failedLists=0,soloFallback=null;
+  try{
+    for(const it of items){
+      if(it.type==="video"){ids.push(it.v);continue}
+      btn.textContent="재생목록 읽는 중…";
+      try{const got=await resolvePlaylist(it.list);ids.push(...got);lists++;if(it.v)soloFallback=it.v}
+      catch(err){failedLists++;if(it.v)ids.push(it.v)}
+    }
+  }finally{adding=false;btn.disabled=false;btn.textContent=label}
+  if(failedLists&&!ids.length){toast(location.protocol==="file:"?"재생목록은 웹에 올린 주소에서만 읽을 수 있어요":"재생목록을 읽지 못했어요. 공개 또는 일부 공개 재생목록인지 확인해 주세요");return}
+  const have=new Set((data.linked?data.base.concat(data.extra):data.tracks).map(t=>t.v)),fresh=[...new Set(ids)].filter(v=>!have.has(v));
+  if(ids.length&&!fresh.length){inUrl.value="";toast("이미 박스에 있는 곡이에요");return}
+  const room=TRACK_MAX-data.tracks.length,uniq=fresh.slice(0,Math.max(0,room));
+  if(!uniq.length){toast(`레코드는 ${TRACK_MAX}장까지 넣을 수 있어요`);return}
+  inUrl.value="";
+  const before=data.tracks.slice();
+  const added=uniq.map(v=>({id:uid(),v,t:"",a:"",hs:-1,he:-1}));
+  if(data.linked){data.extra.push(...added);relink(data)}else data.tracks.push(...added);cur=before.length;save();refreshAll();
+  let msg=lists?`재생목록에서 레코드 ${added.length}장을 넣었어요`:`레코드 ${added.length}장을 넣었어요`;
+  if(fresh.length>uniq.length)msg+=` (박스는 ${TRACK_MAX}장까지 담겨요)`;
+  else if(new Set(ids).size>fresh.length)msg+=" · 이미 있는 곡은 뺐어요";
+  if(failedLists)msg+=" · 읽지 못한 재생목록이 있어요";
+  if(lists===1&&soloFallback&&items.length===1)toast(msg,"이 곡만 넣기",()=>{const one={id:uid(),v:soloFallback,t:"",a:"",hs:-1,he:-1};
+    if(data.linked){data.extra=data.extra.filter(t=>!added.includes(t)).concat([one]);relink(data)}else data.tracks=before.concat([one]);cur=data.tracks.length-1;save();refreshAll();fillMeta(data.tracks.slice(-1))});
+  else toast(msg);
+  await fillMeta(added);
+});
+/* titles arrive a few at a time; repaint in batches so a 50-song playlist doesn't rebuild the crate 50 times */
+async function fillMeta(list){
+  let i=0,done=0;
+  const work=async()=>{while(i<list.length){const t=list[i++];const m=await fetchMeta(t.v);
+    if(m){if(!t.t)t.t=m.t;if(!t.a)t.a=m.a;t.vt=m.vt;t.ch=m.ch}
+    if(++done%6===0){save();refreshAll()}}};
+  await Promise.all([work(),work(),work(),work()]);
+  save();refreshAll();
+}
+
+/* ---------- link / photo / text blocks ---------- */
+function normUrl(u){u=String(u||"").trim();if(!u)return"";if(!/^https?:\/\//i.test(u))u="https://"+u;
+  try{const x=new URL(u);return /^https?:$/.test(x.protocol)&&x.hostname.includes(".")?x.href:""}catch(e){return""}}
+const hostOf=u=>{try{return new URL(u).hostname.replace(/^www\./,"")}catch(e){return""}};
+const IMG_DATA=/^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/;
+const safeImg=src=>IMG_DATA.test(src||"")?src:(normUrl(src).startsWith("https://")?normUrl(src):"");
+function cleanBlock(b){if(!b)return null;const id=b.id||uid();
+  if(b.t==="text")return{id,t:"text",text:String(b.text||"").slice(0,600)};
+  if(b.t==="link")return{id,t:"link",label:String(b.label||"").slice(0,60),url:String(b.url||"").slice(0,500)};
+  if(b.t==="img"){const src=safeImg(b.src);return src?{id,t:"img",src}:null}
+  if(b.t==="space")return{id,t:"space",h:clamp(Math.round(+b.h||0),0,200)};
+  return null}
+function renderBlocks(){
+  const html=data.blocks.map(b=>{
+    if(b.t==="text")return b.text.trim()?`<p class="blk-text">${esc(b.text)}</p>`:"";
+    if(b.t==="link"){const u=normUrl(b.url);return u?`<a class="blk-link" href="${esc(u)}" target="_blank" rel="noopener noreferrer"><b>${esc(b.label||hostOf(u))}</b><span>${esc(hostOf(u))}</span></a>`:""}
+    if(b.t==="img"){const src=safeImg(b.src);return src?`<img class="blk-img" src="${esc(src)}" alt="" loading="lazy">`:""}
+    if(b.t==="space")return `<div class="blk-space" style="height:${clamp(+b.h||0,0,200)}px" aria-hidden="true"></div>`;
+    return""}).join("");
+  const el=$("#blocks");el.innerHTML=html;el.hidden=!data.blocks.some(b=>b.t!=="space"&&html);
+}
+function renderBlockEditor(){
+  $("#bedit").innerHTML=data.blocks.map((b,i)=>`<div class="brow" data-id="${b.id}">
+    <span class="kind">${b.t==="text"?"글":b.t==="link"?"링크":b.t==="space"?"공백":"사진"}</span>
+    <div class="bf">${
+      b.t==="text"?`<textarea class="in" data-f="text" maxlength="600" placeholder="하고 싶은 말을 적어 보세요">${esc(b.text)}</textarea>`:
+      b.t==="space"?`<div class="space-ed"><span>높이</span><input type="range" data-f="h" min="0" max="200" step="4" value="${b.h}" aria-label="공백 높이"><output>${b.h}px</output><span class="space-bar" style="height:${Math.max(6,b.h/2)}px"></span></div>`:
+      b.t==="link"?`<input class="in" data-f="label" value="${esc(b.label)}" maxlength="60" placeholder="버튼 이름 (예: 내 인스타그램)"><input class="in" data-f="url" value="${esc(b.url)}" placeholder="주소 (예: instagram.com/...)" spellcheck="false" inputmode="url">`:
+      `<img src="${esc(b.src)}" alt=""><div><button class="btn sm" type="button" data-act="reimg">다른 사진으로</button></div>`}</div>
+    <span class="acts"><button class="sq" data-act="up" aria-label="위로" ${i?"":"disabled"}>↑</button><button class="sq" data-act="down" aria-label="아래로" ${i<data.blocks.length-1?"":"disabled"}>↓</button><button class="sq" data-act="del" aria-label="빼기">✕</button></span>
+  </div>`).join("");
+}
+let imgTarget=null;
+$(".addrow").addEventListener("click",e=>{const k=e.target.closest("[data-add]")?.dataset.add;if(!k)return;
+  if(k==="img"){imgTarget=null;$("#imgFile").click();return}
+  data.blocks.push(k==="text"?{id:uid(),t:"text",text:""}:k==="space"?{id:uid(),t:"space",h:32}:{id:uid(),t:"link",label:"",url:""});save();renderBlockEditor();renderBlocks();
+  const rows=$("#bedit").querySelectorAll(".brow");rows[rows.length-1]?.querySelector(".in")?.focus()});
+$("#bedit").addEventListener("input",e=>{const f=e.target.dataset.f;if(!f)return;const row=e.target.closest(".brow"),b=data.blocks.find(x=>x.id===row.dataset.id);
+  if(f==="h"){b.h=+e.target.value;row.querySelector("output").textContent=b.h+"px";row.querySelector(".space-bar").style.height=Math.max(6,b.h/2)+"px"}else b[f]=e.target.value;
+  save();renderBlocks()});
+$("#bedit").addEventListener("click",e=>{const a=e.target.closest("[data-act]")?.dataset.act;if(!a)return;const id=e.target.closest(".brow").dataset.id,B=data.blocks,i=B.findIndex(x=>x.id===id);
+  if(a==="reimg"){imgTarget=id;$("#imgFile").click();return}
+  if(a==="up"&&i>0)[B[i-1],B[i]]=[B[i],B[i-1]];
+  if(a==="down"&&i<B.length-1)[B[i+1],B[i]]=[B[i],B[i+1]];
+  if(a==="del"){const [b]=B.splice(i,1);toast("뺐어요","되돌리기",()=>{B.splice(i,0,b);save();renderBlockEditor();renderBlocks()})}
+  save();renderBlockEditor();renderBlocks()});
+/* photos travel inside the share link, so they're shrunk to a small webp/jpeg first */
+async function shrinkImage(file,max=560,limit=48000){
+  const url=URL.createObjectURL(file);
+  try{const img=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=no;i.src=url});
+    let q=.72,out="";
+    for(let n=0;n<8;n++){
+      const k=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight)),c=document.createElement("canvas");
+      c.width=Math.round(img.naturalWidth*k);c.height=Math.round(img.naturalHeight*k);c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+      out=c.toDataURL("image/webp",q);if(!out.startsWith("data:image/webp"))out=c.toDataURL("image/jpeg",q);
+      if(out.length<limit)break;if(q>.45)q-=.1;else max=Math.round(max*.8);
+    }
+    return out}finally{URL.revokeObjectURL(url)}
+}
+$("#imgFile").addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
+  if(!f.type.startsWith("image/")){toast("사진 파일만 넣을 수 있어요");return}
+  try{const src=await shrinkImage(f);
+    if(imgTarget){const b=data.blocks.find(x=>x.id===imgTarget);if(b)b.src=src}else data.blocks.push({id:uid(),t:"img",src});
+    save();renderBlockEditor();renderBlocks();toast("사진을 넣었어요")}catch(err){toast("이 사진은 열 수 없어요. 다른 사진으로 해 주세요")}});
+
+/* ---------- box stickers ---------- */
+const STK_MAX=30;
+function starPts(cx,cy,R,r,n){let p=[];for(let i=0;i<n*2;i++){const a=Math.PI/n*i-Math.PI/2,d=i%2?r:R;p.push((cx+Math.cos(a)*d).toFixed(1)+","+(cy+Math.sin(a)*d).toFixed(1))}return p.join(" ")}
+const STK={
+  star:{n:"별",svg:`<svg viewBox="0 0 100 100"><polygon points="${starPts(50,53,47,21,5)}" fill="#FFD43B" stroke="#E2A400" stroke-width="2.5" stroke-linejoin="round"/></svg>`},
+  heart:{n:"하트",svg:`<svg viewBox="0 0 100 92"><path d="M50 86C20 64 6 46 6 30 6 16 17 6 30 6c9 0 16 5 20 12 4-7 11-12 20-12 13 0 24 10 24 24 0 16-14 34-44 56Z" fill="#FF6B8B"/><ellipse cx="28" cy="26" rx="7" ry="4" fill="#fff" opacity=".55" transform="rotate(-30 28 26)"/></svg>`},
+  flower:{n:"꽃",svg:`<svg viewBox="0 0 100 100">${[0,45,90,135,180,225,270,315].map(a=>`<ellipse cx="50" cy="24" rx="12" ry="22" fill="#fff" stroke="#E6E1D6" stroke-width="1.5" transform="rotate(${a} 50 50)"/>`).join("")}<circle cx="50" cy="50" r="14" fill="#FFC93C"/></svg>`},
+  smile:{n:"스마일",svg:`<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#FFD43B"/><ellipse cx="36" cy="40" rx="4.5" ry="7.5" fill="#3A2A00"/><ellipse cx="64" cy="40" rx="4.5" ry="7.5" fill="#3A2A00"/><path d="M28 58q22 24 44 0" fill="none" stroke="#3A2A00" stroke-width="6" stroke-linecap="round"/></svg>`},
+  note:{n:"음표",svg:`<svg viewBox="0 0 100 100"><path d="M36 74V24l44-10v50" fill="none" stroke="#1E1E1E" stroke-width="7" stroke-linejoin="round"/><path d="M36 24l44-10v13L36 37Z" fill="#1E1E1E"/><ellipse cx="27" cy="75" rx="13" ry="10" fill="#1E1E1E" transform="rotate(-20 27 75)"/><ellipse cx="71" cy="65" rx="13" ry="10" fill="#1E1E1E" transform="rotate(-20 71 65)"/></svg>`},
+  bolt:{n:"번개",svg:`<svg viewBox="0 0 100 100"><polygon points="58,3 16,57 44,57 34,97 84,38 55,38 68,3" fill="#FFE14D" stroke="#D9A900" stroke-width="2.5" stroke-linejoin="round"/></svg>`},
+  cherry:{n:"체리",svg:`<svg viewBox="0 0 100 100"><path d="M33 70Q42 36 62 16M70 66Q66 40 62 16" fill="none" stroke="#4C7A34" stroke-width="4" stroke-linecap="round"/><path d="M62 16q16-12 30-2-14 12-30 2Z" fill="#6BAF4A"/><circle cx="31" cy="72" r="17" fill="#E3262F"/><circle cx="71" cy="68" r="17" fill="#E3262F"/><circle cx="25" cy="66" r="4" fill="#fff" opacity=".6"/><circle cx="65" cy="62" r="4" fill="#fff" opacity=".6"/></svg>`},
+  cloud:{n:"구름",svg:`<svg viewBox="0 0 100 70"><path d="M24 62h52a17 17 0 0 0 2-34 25 25 0 0 0-48-4 19 19 0 0 0-6 38Z" fill="#fff" stroke="#9EC5E8" stroke-width="3"/></svg>`},
+  sparkle:{n:"반짝",svg:`<svg viewBox="0 0 100 100"><path d="M50 4c4 32 12 42 46 46-34 4-42 14-46 46-4-32-12-42-46-46 34-4 42-14 46-46Z" fill="#8FD3FF"/></svg>`},
+  record:{n:"레코드",svg:`<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#151515"/><circle cx="50" cy="50" r="37" fill="none" stroke="#333" stroke-width="1.2"/><circle cx="50" cy="50" r="29" fill="none" stroke="#333" stroke-width="1.2"/><circle cx="50" cy="50" r="16" fill="#FF7A59"/><circle cx="50" cy="50" r="2.6" fill="#fff"/></svg>`},
+  fragile:{n:"FRAGILE",svg:`<svg viewBox="0 0 170 62"><rect x="3" y="3" width="164" height="56" rx="5" fill="#fff" stroke="#D7263D" stroke-width="4"/><text x="85" y="42" text-anchor="middle" font-family="Impact,'Arial Black',sans-serif" font-weight="900" font-size="30" letter-spacing="3" fill="#D7263D">FRAGILE</text></svg>`},
+  sideup:{n:"THIS SIDE UP",svg:`<svg viewBox="0 0 120 104"><rect x="3" y="3" width="114" height="98" rx="5" fill="#fff" stroke="#222" stroke-width="3"/><path d="M38 66V24M24 38l14-16 14 16M82 66V24M68 38l14-16 14 16" fill="none" stroke="#222" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><text x="60" y="90" text-anchor="middle" font-family="'Arial Black',Arial,sans-serif" font-weight="900" font-size="15" fill="#222">THIS SIDE UP</text></svg>`},
+  tape:{n:"테이프",svg:`<svg viewBox="0 0 160 40"><polygon points="4,4 10,9 4,14 10,20 4,26 10,31 4,36 156,36 150,31 156,26 150,20 156,14 150,9 156,4" fill="#FFE68C" fill-opacity=".82"/></svg>`},
+};
+const TXT_COLORS=[["#FFE45C","#151515"],["#151515","#FFFFFF"],["#FF8FB1","#151515"],["#FFFFFF","#151515"],["#8FD3FF","#151515"]];
+const PHOTO_MAX=4,SHAPES=["원형","폴라로이드","네모","원본 모양"];
+function cleanSticker(x){if(!x||!(x.k in STK||x.k==="text"||x.k==="photo"))return null;
+  const o={k:x.k,x:clamp(+x.x||50,-10,110),y:clamp(+x.y||50,-10,110),r:clamp(+x.r||0,-180,180),s:clamp(+x.s||14,3,70)};
+  if(o.k==="text"){o.txt=String(x.txt||"").slice(0,24);o.c=clamp(+x.c||0,0,TXT_COLORS.length-1)}
+  if(o.k==="photo"){const src=safeImg(x.src||x.txt);if(!src)return null;o.src=src;o.c=clamp(+x.c||0,0,SHAPES.length-1);if(o.c===1)o.c=2;o.b=x.b===undefined?true:!!x.b}
+  return o}
+function stkHTML(x,i,sel){
+  const base=`left:${x.x}%;top:${x.y}%;--r:${x.r}deg;`;
+  if(x.k==="text"){const[bg,fg]=TXT_COLORS[x.c||0];return `<div class="stk txt${sel?" sel":""}" data-i="${i}" style="${base}font-size:calc(var(--W) * ${(x.s/100).toFixed(4)});background:${bg};color:${fg}">${esc(x.txt||"글자")}</div>`}
+  if(x.k==="photo")return `<div class="stk ph sh${x.c||0}${x.b?"":" nb"}${sel?" sel":""}" data-i="${i}" style="${base}width:${x.s}%"><img src="${esc(x.src)}" alt="" draggable="false"></div>`;
+  return `<div class="stk${sel?" sel":""}" data-i="${i}" style="${base}width:${x.s}%">${STK[x.k].svg}</div>`;
+}
+function renderBoxStickers(){$("#stks3d").innerHTML=data.stickers.map((x,i)=>stkHTML(x,i)).join("");$("#tagBox").classList.toggle("off",!!data.tagOff)}
+let selStk=-1;
+const face=$("#stkFace");
+function sizeFace(){
+  const ratio=geo.W/geo.H,avail=face.parentElement.clientWidth-48,maxH=Math.max(150,innerHeight*.38);
+  const w=Math.round(Math.min(avail,maxH*ratio));
+  face.style.width=w+"px";face.style.height=Math.round(w/ratio)+"px";face.style.setProperty("--W",w+"px")}
+function renderEditor(){
+  sizeFace();
+  face.innerHTML=`<div class="tag${data.tagOff?" off":""}"><b>${esc(data.title||"LP BOX")}</b><span>${data.tracks.length} RECORDS</span></div><div class="stks">${data.stickers.map((x,i)=>stkHTML(x,i,i===selStk)).join("")}</div>`;
+  $("#tagToggle").setAttribute("aria-pressed",!data.tagOff);
+  renderCtl();
+}
+function renderCtl(){
+  const x=data.stickers[selStk],c=$("#sctl");
+  if(!x){c.innerHTML=data.stickers.length?"붙인 스티커를 누르면 크기와 각도를 바꿀 수 있어요":"아래에서 스티커를 골라 보세요";return}
+  const isT=x.k==="text",isP=x.k==="photo";
+  const on="border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)";
+  c.innerHTML=`${isP?`<span style="display:flex;gap:6px;flex-wrap:wrap">${SHAPES.map((n,j)=>j===1?"":`<button class="btn sm" type="button" data-shape="${j}" aria-pressed="${(x.c||0)===j}" style="${(x.c||0)===j?on:""}">${n}</button>`).join("")}</span><button class="toggle" type="button" data-border="1" aria-pressed="${!!x.b}"><i></i>흰 테두리</button>`:""}${isT?`<input class="in" id="sTxt" maxlength="24" value="${esc(x.txt)}" placeholder="글자 입력"><span style="display:flex;gap:6px">${TXT_COLORS.map((p,j)=>`<button class="swatch" type="button" data-c="${j}" aria-label="색 ${j+1}" aria-pressed="${(x.c||0)===j}" style="background:${p[0]}"></button>`).join("")}</span>`:""}
+    <label>크기<input type="range" id="sSize" min="${isT?4:6}" max="${isT?16:60}" step=".5" value="${x.s}"></label>
+    <label>각도<input type="range" id="sRot" min="-45" max="45" step="1" value="${clamp(x.r,-45,45)}"></label>
+    <button class="btn sm" type="button" id="sFront">맨 앞으로</button><button class="btn sm" type="button" id="sDel">떼기</button>`;
+}
+function touchSticker(){const x=data.stickers[selStk];const el=face.querySelector(`.stk[data-i="${selStk}"]`);if(el&&x)el.outerHTML=stkHTML(x,selStk,true);save();renderBoxStickers()}
+$("#sctl").addEventListener("input",e=>{const x=data.stickers[selStk];if(!x)return;
+  if(e.target.id==="sSize")x.s=+e.target.value;if(e.target.id==="sRot")x.r=+e.target.value;if(e.target.id==="sTxt")x.txt=e.target.value;touchSticker()});
+$("#sctl").addEventListener("click",e=>{const x=data.stickers[selStk];if(!x)return;
+  if(e.target.dataset.c){x.c=+e.target.dataset.c;touchSticker();renderCtl();return}
+  if(e.target.dataset.shape){x.c=+e.target.dataset.shape;touchSticker();renderCtl();return}
+  if(e.target.closest("[data-border]")){x.b=!x.b;touchSticker();renderCtl();return}
+  if(e.target.id==="sFront"){data.stickers.splice(selStk,1);data.stickers.push(x);selStk=data.stickers.length-1}
+  if(e.target.id==="sDel"){data.stickers.splice(selStk,1);selStk=-1}
+  save();renderBoxStickers();renderEditor()});
+$("#tray").innerHTML=Object.entries(STK).map(([k,v])=>`<button type="button" data-k="${k}" aria-label="${v.n} 붙이기" title="${v.n}">${v.svg}</button>`).join("")+`<button type="button" class="tx" data-k="text">Aa 글자</button><button type="button" class="tx" data-k="photo">사진</button>`;
+$("#tray").addEventListener("click",e=>{const k=e.target.closest("[data-k]")?.dataset.k;if(!k)return;
+  if(data.stickers.length>=STK_MAX){toast(`스티커는 ${STK_MAX}개까지 붙일 수 있어요`);return}
+  if(k==="photo"){if(data.stickers.filter(x=>x.k==="photo").length>=PHOTO_MAX){toast(`사진 스티커는 ${PHOTO_MAX}장까지 붙일 수 있어요`);return}$("#stkFile").click();return}
+  addSticker(cleanSticker({k,x:50+(Math.random()*30-15),y:50+(Math.random()*30-15),r:Math.round(Math.random()*24-12),s:k==="text"?8:(k==="fragile"||k==="tape"?26:15),txt:k==="text"?"MY LP":"",c:0}))});
+function addSticker(x){
+  if(!x)return;
+  data.stickers.push(x);selStk=data.stickers.length-1;save();renderBoxStickers();renderEditor();
+  const el=face.querySelector(`.stk[data-i="${selStk}"]`);if(el&&!reduced())el.animate([{transform:"translate(-50%,-50%) rotate(var(--r)) scale(1.6)",opacity:0},{transform:"translate(-50%,-50%) rotate(var(--r)) scale(1)",opacity:1}],{duration:320,easing:"cubic-bezier(.2,.8,.3,1.2)"})}
+/* stickers ride inside the share link, so they're shrunk hard; transparent pixels are kept (WebP, or PNG where WebP can't be written) */
+async function shrinkSticker(file){
+  const url=URL.createObjectURL(file);
+  try{const img=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=no;i.src=url});
+    const draw=max=>{const k=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight)),c=document.createElement("canvas");
+      c.width=Math.max(1,Math.round(img.naturalWidth*k));c.height=Math.max(1,Math.round(img.naturalHeight*k));c.getContext("2d").drawImage(img,0,0,c.width,c.height);return c};
+    let c=draw(260);
+    const px=c.getContext("2d").getImageData(0,0,c.width,c.height).data;let alpha=false;
+    for(let i=3;i<px.length;i+=16)if(px[i]<250){alpha=true;break}
+    let max=260,q=.8,out="";
+    for(let n=0;n<10;n++){
+      c=draw(max);out=c.toDataURL("image/webp",q);
+      if(!out.startsWith("data:image/webp"))out=alpha?c.toDataURL("image/png"):c.toDataURL("image/jpeg",q);
+      if(out.length<20000)break;
+      if(out.startsWith("data:image/png")||q<=.5)max=Math.round(max*.82);else q-=.1;
+    }
+    return{src:out,alpha}}finally{URL.revokeObjectURL(url)}
+}
+function askBorder(x,alpha){return new Promise(res=>{
+  $("#bMsg").textContent=alpha?"투명한 부분은 그대로 비워 둘게요. 흰 테두리를 넣으면 사진 모양을 따라 둘러져요.":"사진 둘레에 흰 테두리를 넣을 수 있어요. 나중에 스티커를 눌러서 바꿀 수도 있어요.";
+  for(const b of [0,1])$("#bPrev"+b).innerHTML=stkHTML({...x,b:!!b,r:0,s:58},-1).replace(/left:[^;]+;top:[^;]+;/,"");
+  const m=$("#borderAsk");m.hidden=false;
+  const done=v=>{m.hidden=true;m.onclick=null;$("#bCancel").onclick=null;res(v)};
+  m.onclick=e=>{const o=e.target.closest(".bopt");if(o)done(o.dataset.b==="1");else if(e.target===m)done(null)};
+  $("#bCancel").onclick=()=>done(null);
+})}
+$("#stkFile").addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
+  if(!f.type.startsWith("image/")){toast("사진 파일만 넣을 수 있어요");return}
+  let shot;try{shot=await shrinkSticker(f)}catch(err){toast("이 사진은 열 수 없어요. 다른 사진으로 해 주세요");return}
+  const x=cleanSticker({k:"photo",src:shot.src,x:50+(Math.random()*20-10),y:50+(Math.random()*20-10),r:Math.round(Math.random()*16-8),s:shot.alpha?28:24,c:shot.alpha?3:2,b:true});
+  if(!x)return;
+  const b=await askBorder(x,shot.alpha);if(b===null)return;
+  x.b=b;addSticker(x)});
+/* box color right inside the sticker editor */
+const BOX_COLORS=[["#FFFFFF","흰색"],["#C8A27C","크라프트"],["#1F1F1F","검정"],["#FFDCDC","분홍"],["#F9E8A2","노랑"],["#BDD2B6","연두"],["#B4E1EB","하늘"],["#D9CCF2","라일락"],["#E3CAA5","베이지"]];
+function renderBoxColors(){const cur=data.style.box.toUpperCase();
+  $("#boxColors").innerHTML=`<span>상자 색</span>${BOX_COLORS.map(([c,n])=>`<button class="swatch" type="button" data-box="${c}" aria-label="${n}" title="${n}" aria-pressed="${cur===c}" style="background:${c}"></button>`).join("")}<input type="color" id="boxPick" value="${data.style.box}" aria-label="직접 고르기" title="직접 고르기">`}
+$("#boxColors").addEventListener("click",e=>{const c=e.target.dataset.box;if(!c)return;data.style.box=c;styleChanged();renderBoxColors()});
+$("#boxColors").addEventListener("input",e=>{if(e.target.id!=="boxPick")return;data.style.box=e.target.value;styleChanged(false)});
+$("#boxColors").addEventListener("change",e=>{if(e.target.id==="boxPick"){renderDesign();renderBoxColors()}});
+let sDrag=null;
+face.addEventListener("pointerdown",e=>{const el=e.target.closest(".stk");
+  if(!el){if(selStk>=0){selStk=-1;renderEditor()}return}
+  e.preventDefault();const i=+el.dataset.i;if(i!==selStk){selStk=i;face.querySelectorAll(".stk").forEach(s=>s.classList.toggle("sel",+s.dataset.i===i));renderCtl()}
+  const r=face.getBoundingClientRect(),x=data.stickers[i];
+  sDrag={i,dx:x.x-(e.clientX-r.left)/r.width*100,dy:x.y-(e.clientY-r.top)/r.height*100,el:face.querySelector(`.stk[data-i="${i}"]`)};face.setPointerCapture(e.pointerId)});
+face.addEventListener("pointermove",e=>{if(!sDrag)return;const r=face.getBoundingClientRect(),x=data.stickers[sDrag.i];
+  x.x=clamp((e.clientX-r.left)/r.width*100+sDrag.dx,-5,105);x.y=clamp((e.clientY-r.top)/r.height*100+sDrag.dy,-5,105);
+  sDrag.el.style.left=x.x+"%";sDrag.el.style.top=x.y+"%"});
+const sUp=()=>{if(!sDrag)return;sDrag=null;save();renderBoxStickers()};
+face.addEventListener("pointerup",sUp);face.addEventListener("pointercancel",sUp);
+$("#decoBtn").onclick=()=>{selStk=-1;$("#stkModal").hidden=false;renderBoxColors();requestAnimationFrame(renderEditor)};
+$("#stkDone").onclick=()=>{$("#stkModal").hidden=true;toast("상자를 꾸몄어요")};
+$("#stkModal").addEventListener("click",e=>{if(e.target.id==="stkModal")$("#stkModal").hidden=true});
+$("#tagToggle").onclick=()=>{data.tagOff=!data.tagOff;save();renderBoxStickers();renderEditor()};
+$("#stkClear").onclick=()=>{if(!data.stickers.length)return;const old=data.stickers;data.stickers=[];selStk=-1;save();renderBoxStickers();renderEditor();
+  toast("스티커를 모두 뗐어요","되돌리기",()=>{data.stickers=old;save();renderBoxStickers();if(!$("#stkModal").hidden)renderEditor()})};
+addEventListener("keydown",e=>{if($("#stkModal").hidden||selStk<0||/INPUT|TEXTAREA/.test(document.activeElement?.tagName))return;
+  if(e.key==="Delete"||e.key==="Backspace"){e.preventDefault();data.stickers.splice(selStk,1);selStk=-1;save();renderBoxStickers();renderEditor()}});
+addEventListener("resize",()=>{if(!$("#stkModal").hidden)sizeFace()});
+
+/* ---------- share + preview ---------- */
+let lastLink="";
+let shareSeq=0,shortLink="",shortPending=null;
+$("#shareBtn").onclick=async()=>{
+  if(data.linked){++shareSeq;const u=siteBase()+"?b="+data.linked;lastLink=shortLink=u;
+    $("#shareUrl").value=u;$("#shortState").textContent="";$("#copyBtn").disabled=false;$("#copyBtn").textContent="복사";
+    $("#shareNote").textContent=`${whoOf(data)}이 만든 원래 박스 링크예요. 받은 사람에게는 ${whoOf(data)}의 박스가 그대로 보이고, 내가 더한 곡은 나에게만 보여요.`;
+    $("#modal").hidden=false;$("#shareUrl").select();return}
+  if(!data.tracks.length){toast("레코드를 한 장 이상 넣어야 공유할 수 있어요");return}
+  if(cloud&&me){
+    ++shareSeq;await pushNow();
+    if(!data.cloudId){toast("계정에 저장하지 못해서 긴 링크를 드려요");}else{
+    lastLink=siteBase()+"#p="+await encodeBox(data);shortLink=siteBase()+"?b="+data.cloudId;
+    $("#shareUrl").value=shortLink;$("#shortState").textContent="";$("#copyBtn").disabled=false;$("#copyBtn").textContent="복사";
+    $("#shareNote").textContent="이 링크는 내 계정의 박스와 연결돼 있어요. 곡이나 디자인을 고치면 받은 사람에게도 바로 반영돼서, 다시 보낼 필요가 없어요.";
+    $("#modal").hidden=false;$("#shareUrl").select();return}}
+  const code=await encodeBox(data),seq=++shareSeq;
+  lastLink=siteBase()+"#p="+code;shortLink="";
+  $("#shareUrl").value=lastLink;
+  const stEl=$("#shortState");stEl.textContent="짧은 주소를 만드는 중이에요…";
+  const copyBtn=$("#copyBtn");copyBtn.disabled=true;copyBtn.textContent="잠시만요";
+  shortPending=shorten(code).then(u=>{if(seq!==shareSeq)return;shortLink=u;$("#shareUrl").value=u;$("#shareUrl").select();
+      const host=u.split("/")[2];stEl.textContent=`짧은 주소는 ${host} 주소 줄이기 서비스로 만들었어요.`+(host==="da.gd"?" 처음 1시간 동안은 열 때 '이동합니다' 안내 화면을 한 번 거쳐요.":"")})
+    .catch(err=>{if(seq!==shareSeq)return;stEl.textContent=err.message==="file"?"":err.message==="long"?"사진이 많아 짧은 주소로 만들 수 없어서 긴 링크를 드려요. 사진 스티커나 사진 블록을 줄이면 짧아져요.":`짧은 주소를 만들지 못해서 긴 링크를 드려요. 긴 링크도 똑같이 열려요. (${shortErrors.join(" / ")})`})
+    .finally(()=>{if(seq!==shareSeq)return;copyBtn.disabled=false;copyBtn.textContent="복사"});
+  $("#shareNote").textContent=location.protocol==="file:"?"지금은 컴퓨터 파일로 열려 있어서 이 링크는 다른 사람이 열 수 없어요. 웹에 올린 주소에서 다시 공유해 주세요.":"곡이나 디자인을 바꾸면 링크를 다시 만들어서 보내 주세요."+(cloud&&!me?" 로그인하면 내 사이트 주소로 된 짧은 링크가 생기고, 고친 내용이 그 링크에 바로 반영돼요.":"");
+  if(lastLink.length>9000&&location.protocol!=="file:")$("#shareNote").textContent+=" 사진이 들어 있어서 링크가 길어요. 일부 메신저에서는 링크가 잘릴 수 있으니 받은 사람이 잘 열리는지 확인해 주세요.";
+  $("#modal").hidden=false;$("#shareUrl").select();
+};
+function copyLink(v,field="#shareUrl"){navigator.clipboard.writeText(v).then(()=>toast("링크를 복사했어요"),()=>{const f=$(field);f.value=v;f.select();try{document.execCommand("copy");toast("링크를 복사했어요")}catch(e){toast("링크를 선택해 두었어요. 복사해 주세요")}})}
+$("#editLinkBtn").onclick=async()=>{
+  const url=siteBase()+"#e="+await encodeBox(data);
+  $("#editUrl").value=url;$("#editModal").hidden=false;$("#editUrl").select();
+  if(location.protocol==="file:")toast("컴퓨터 파일로 열려 있어서 다른 기기에서는 열 수 없어요. 웹에 올린 주소에서 만들어 주세요");
+};
+$("#editCopy").onclick=()=>copyLink($("#editUrl").value,"#editUrl");
+$("#editClose").onclick=()=>$("#editModal").hidden=true;
+$("#editModal").addEventListener("click",e=>{if(e.target.id==="editModal")$("#editModal").hidden=true});
+$("#copyBtn").onclick=()=>copyLink($("#shareUrl").value);
+$("#closeModal").onclick=()=>$("#modal").hidden=true;
+$("#modal").addEventListener("click",e=>{if(e.target.id==="modal")$("#modal").hidden=true});
+
+let pvDevice="phone";
+const PV_SIZE={phone:[390,800],desk:[1280,820]};
+function layoutPreview(){const a=$("#pvArea").getBoundingClientRect(),[w,h]=PV_SIZE[pvDevice],pad=pvDevice==="phone"?24:8;
+  const s=Math.min((a.width-pad*2)/w,(a.height-pad*2)/h,1),dev=$("#pvDev"),f=$("#pvFrame");
+  dev.className="pv-dev "+pvDevice;dev.style.width=w*s+"px";dev.style.height=h*s+"px";f.style.width=w+"px";f.style.height=h+"px";f.style.transform=`scale(${s})`}
+async function openPreview(){
+  if(!data.tracks.length){toast("레코드를 한 장 이상 넣으면 미리볼 수 있어요");return}
+  if(isPlaying&&ytReady)player.pauseVideo();
+  lastLink=data.linked?siteBase()+"?b="+data.linked:await shareLink();$("#modal").hidden=true;$("#pv").hidden=false;layoutPreview();
+  $("#pvFrame").src=lastLink+"&pv=1";
+}
+$("#previewBtn").onclick=openPreview;$("#mPreview").onclick=openPreview;
+$("#pvSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;pvDevice=b.dataset.d;$("#pvSeg").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));layoutPreview()});
+$("#pvReplay").onclick=()=>{const f=$("#pvFrame");f.src="about:blank";setTimeout(()=>f.src=lastLink+"&pv=1&r="+Date.now(),50)};
+$("#pvCopy").onclick=()=>copyLink(shortLink||lastLink);
+function closePreview(){$("#pv").hidden=true;$("#pvFrame").src="about:blank"}
+$("#pvClose").onclick=closePreview;
+addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("#borderAsk").hidden){$("#bCancel").click();return}$("#modal").hidden=true;$("#stkModal").hidden=true;$("#editModal").hidden=true;if(!$("#pv").hidden)closePreview()}});
+
+$("#makeOwn").onclick=()=>{location.href=location.pathname};
+
+/* ---------- bigger turntable ---------- */
+const ZOOM_IN='<path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>',ZOOM_OUT='<path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/>';
+/* player-only screen for studying: real fullscreen where the browser allows it, and the screen kept awake while it's on */
+let wakeLock=null;
+const isPhone=()=>matchMedia("(pointer:coarse)").matches&&Math.min(screen.width,screen.height)<820;
+let landLocked=false;
+/* land=true: the phone "enlarge" view, turned landscape. land=false: the fit-to-screen view, kept upright on phones. */
+async function setFocus(on,land=false){
+  const B=document.body;
+  if(on===B.classList.contains("focus")&&(!on||land===B.classList.contains("land")))return;
+  const run=()=>{B.classList.toggle("focus",on);B.classList.toggle("land",on&&land);if(!on)B.classList.remove("fakeland");$("#focusExit").hidden=!on;window.scrollTo(0,0)};
+  if(land||!on&&B.classList.contains("land")){run()}
+  else if(document.startViewTransition&&!reduced()){const el=$("#tt");el.style.viewTransitionName="deck-tt";const vt=document.startViewTransition(run);vt.ready.catch(()=>{});vt.finished.catch(()=>{}).finally(()=>el.style.viewTransitionName="")}else run();
+  if(on){try{if(document.documentElement.requestFullscreen&&!document.fullscreenElement)await document.documentElement.requestFullscreen({navigationUI:"hide"})}catch(e){}
+    landLocked=false;
+    if(land){try{await screen.orientation.lock("landscape");landLocked=true}catch(e){}
+      if(!landLocked&&innerHeight>innerWidth)B.classList.add("fakeland")}
+    else if(isPhone()){try{await screen.orientation.lock("portrait")}catch(e){}}
+    try{wakeLock=await navigator.wakeLock?.request("screen")}catch(e){}}
+  else{try{screen.orientation.unlock()}catch(e){}
+    try{if(document.fullscreenElement)await document.exitFullscreen()}catch(e){}
+    try{await wakeLock?.release()}catch(e){}wakeLock=null}
+}
+$("#focusBtn").onclick=()=>setFocus(true);
+$("#focusExit").onclick=()=>setFocus(false);
+document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement&&document.body.classList.contains("focus"))setFocus(false)});
+document.addEventListener("visibilitychange",async()=>{if(document.visibilityState==="visible"&&document.body.classList.contains("focus")&&(!wakeLock||wakeLock.released)){try{wakeLock=await navigator.wakeLock?.request("screen")}catch(e){}}});
+addEventListener("keydown",e=>{if(e.key==="Escape"&&document.body.classList.contains("focus"))setFocus(false)});
+function setBig(on,animate=true){
+  const deck=$("#deck"),run=()=>{deck.classList.toggle("big",on);$("#zoomBtn").setAttribute("aria-pressed",on);
+    $("#zoomBtn").setAttribute("aria-label",on?"턴테이블 작게 보기":"턴테이블 크게 보기");$("#zoomBtn").title=on?"작게 보기":"크게 보기";$("#zoomIco").innerHTML=on?ZOOM_OUT:ZOOM_IN};
+  try{localStorage.setItem("lpbox-big",on?"1":"")}catch(e){}
+  if(!animate||!document.startViewTransition||reduced()){run();return}
+  /* morph the turntable, sleeve and controls into their new places */
+  const named=[["#tt","deck-tt"],["#cover","deck-cover"],[".info","deck-info"]].map(([q,n])=>{const el=$(q);el.style.viewTransitionName=n;return el});
+  const vt=document.startViewTransition(run);vt.ready.catch(()=>{});vt.finished.catch(()=>{}).finally(()=>named.forEach(el=>el.style.viewTransitionName=""));
+}
+$("#zoomBtn").addEventListener("pointerdown",e=>e.stopPropagation());
+$("#zoomBtn").onclick=()=>{if(isPhone())setFocus(true,true);else setBig(!$("#deck").classList.contains("big"))};
+/* if the phone is physically turned while the sideways view is up, stop turning it ourselves (and the other way round) */
+addEventListener("resize",()=>{const B=document.body;if(!B.classList.contains("land")||landLocked)return;B.classList.toggle("fakeland",innerHeight>innerWidth)});
+try{if(localStorage.getItem("lpbox-big"))setBig(true,false)}catch(e){}
+
+/* ---------- accounts (Firebase) ---------- */
+let cloud=null,me=null,sharedBoxId=null,pushTimer=0,pendingAfterLogin=null,cloudErr="";
+const AUTH_MSG={"auth/email-already-in-use":"이미 가입된 이메일이에요. 로그인해 주세요.","auth/invalid-email":"이메일 형식을 확인해 주세요.",
+  "auth/weak-password":"비밀번호는 6자 이상이어야 해요.","auth/invalid-credential":"이메일이나 비밀번호가 맞지 않아요.","auth/wrong-password":"이메일이나 비밀번호가 맞지 않아요.",
+  "auth/user-not-found":"가입되지 않은 이메일이에요.","auth/missing-password":"비밀번호를 입력해 주세요.","auth/too-many-requests":"시도가 너무 많아요. 잠시 뒤에 다시 해 주세요.",
+  "auth/popup-closed-by-user":"Google 로그인 창이 닫혔어요.","auth/cancelled-popup-request":"Google 로그인 창이 닫혔어요.",
+  "auth/unauthorized-domain":"이 사이트 주소가 Firebase에 등록되지 않았어요. 안내서의 '승인된 도메인' 단계를 확인해 주세요.",
+  "auth/operation-not-allowed":"이 로그인 방법이 Firebase에서 켜져 있지 않아요. 안내서의 '로그인 방법' 단계를 확인해 주세요.",
+  "auth/network-request-failed":"인터넷 연결을 확인해 주세요.","permission-denied":"저장 권한이 없어요. 안내서의 Firestore 규칙 단계를 확인해 주세요.",
+  "unavailable":"계정 서버에 연결하지 못했어요. 잠시 뒤에 다시 해 주세요."};
+const errMsg=e=>AUTH_MSG[e&&e.code]||`문제가 생겼어요. (${(e&&(e.code||e.message))||"알 수 없음"})`;
+function setSync(t,bad){const el=$("#syncState");el.textContent=t;el.classList.toggle("err",!!bad)}
+function boxPayload(b){
+  if(b.linked){const j={linked:b.linked,extra:b.extra,hidden:b.hidden,from:b.from,title:b.title,by:b.by,sv:4};   // only my part; the creator's box stays theirs
+    return{owner:me.uid,json:JSON.stringify(j),title:String(b.title||"").slice(0,80),by:String(b.by||"").slice(0,40),ts:b.ts||Date.now(),linked:b.linked}}
+  const d={...b};delete d.cloudId;delete d.lid;
+  return{owner:me.uid,json:JSON.stringify(d),title:String(b.title||"").slice(0,80),by:String(b.by||"").slice(0,40),ts:b.ts||Date.now()}}
+function queuePush(){if(!cloud||!me||mode!=="owner")return;clearTimeout(pushTimer);setSync("저장하는 중…");pushTimer=setTimeout(()=>pushBox(data),1200)}
+async function freshId(){const ch="abcdefghjkmnpqrstuvwxyz23456789";for(let k=0;k<6;k++){let id="";for(let i=0;i<8;i++)id+=ch[Math.floor(Math.random()*ch.length)];
+  if(!(await cloud.getBox(id)))return id}throw new Error("id")}
+/* push one box to the account (it gets an id the first time) */
+async function pushBox(b){if(b===data)clearTimeout(pushTimer);if(!cloud||!me||!b)return;
+  try{if(!b.cloudId){b.cloudId=await freshId();persistShelf()}
+    const p=boxPayload(b);if(p.json.length>900000){if(b===data)setSync("박스가 너무 커서 계정에 저장하지 못했어요. 사진을 줄여 주세요.",true);return}
+    await cloud.saveBox(b.cloudId,p);if(b===data)setSync("계정에 저장됨")}
+  catch(e){if(b===data)setSync(errMsg(e),true)}}
+const pushNow=()=>pushBox(data);
+const fromCloudDoc=(r,lid,old)=>{const d=normalize(JSON.parse(r.json));d.cloudId=r.id;d.ts=r.ts||0;d.sv=4;d.lid=lid||uid();
+  if(d.linked&&old&&old.linked===d.linked){CREATOR_KEYS.forEach(k=>d[k]=old[k]);d.base=old.base;d.gone=old.gone;relink(d)}   // keep the last look of the creator's box
+  return d};
+/* sign-in merges this device's shelf with the account: newer copy of each box wins, nothing is thrown away */
+let syncedUid=null,syncing=null;
+function syncOnLogin(){if(mode!=="owner"||!me)return;if(syncedUid===me.uid)return syncing;syncedUid=me.uid;syncing=doSync();return syncing}
+async function doSync(){
+  setSync("계정과 맞추는 중…");
+  let remote;try{remote=await cloud.myBoxes(me.uid)}catch(e){setSync(errMsg(e),true);return}
+  const byId=new Map(remote.map(r=>[r.id,r])),seen=new Set();
+  for(const lid of [...shelf.order]){const b=shelf.boxes[lid];
+    if(b.cloudId&&!byId.has(b.cloudId))delete b.cloudId;           // linked to another account or removed there: treat as new
+    const r=b.cloudId&&byId.get(b.cloudId);if(!r)continue;seen.add(r.id);
+    if((r.ts||0)>(b.ts||0))shelf.boxes[lid]=fromCloudDoc(r,lid,b);else if((b.ts||0)>(r.ts||0))await pushBox(b)}
+  if(localIsSample&&remote.length&&shelf.order.length===1&&!shelf.boxes[shelf.order[0]].cloudId){delete shelf.boxes[shelf.order[0]];shelf.order=[]}
+  remote.sort((x,y)=>(y.ts||0)-(x.ts||0)).forEach(r=>{if(seen.has(r.id))return;const d=fromCloudDoc(r);shelf.boxes[d.lid]=d;shelf.order.push(d.lid)});
+  for(const lid of shelf.order)if(!shelf.boxes[lid].cloudId)await pushBox(shelf.boxes[lid]);
+  if(!shelf.boxes[shelf.cur])shelf.cur=shelf.order[0];
+  localIsSample=false;persistShelf();
+  if(shelf.boxes[shelf.cur]!==data)showBox(shelf.boxes[shelf.cur]);
+  setSync("계정에 저장됨");renderShelfBtn();if(!$("#libModal").hidden)renderShelf();
+  refreshAllLinked();
+}
+function renderAccount(){
+  document.body.classList.toggle("has-cloud",!!cloud);document.body.classList.toggle("signed-in",!!me);
+  $("#acctBtn").textContent=me?me.name:"로그인";
+  if(!me&&mode==="owner"){
+    if(cloud)setSync("로그인하면 보관함의 박스들이 계정에 저장되고, 짧은 공유 링크가 생겨요.");
+    else if(cloudErr)setSync(cloudErr,true);
+    else if(window.__cloudWhy==="typo")setSync("로그인 버튼이 꺼져 있어요. index.html 맨 위 설정 부분에 따옴표(\")나 쉼표(,)가 빠졌는지 확인해 주세요.",true);
+    else setSync("로그인 버튼은 Firebase를 연결하면 나타나요. lpbox 폴더의 SETUP.md를 따라 설정값을 넣어 주세요.")}
+  else if(!me)setSync("");
+  if(!$("#libModal").hidden)renderShelf();
+}
+/* login / sign-up sheet */
+let authMode="in";
+function openAuth(why){authMode="in";setAuthTab();$("#aErr").textContent="";const w=$("#authWhy");w.hidden=!why;w.textContent=why||"";$("#authModal").hidden=false;setTimeout(()=>$("#aEmail").focus(),50)}
+function setAuthTab(){const up=authMode==="up";$("#tabIn").setAttribute("aria-selected",!up);$("#tabUp").setAttribute("aria-selected",up);
+  $("#nameRow").hidden=!up;$("#aSubmit").textContent=up?"가입하기":"로그인";$("#aReset").hidden=up;$("#aPw").autocomplete=up?"new-password":"current-password";$("#aErr").textContent=""}
+$("#tabIn").onclick=()=>{authMode="in";setAuthTab()};$("#tabUp").onclick=()=>{authMode="up";setAuthTab()};
+$("#authClose").onclick=()=>{$("#authModal").hidden=true;pendingAfterLogin=null};
+async function afterLogin(u){me=u;$("#authModal").hidden=true;renderAccount();
+  toast(`${u.name}님, 반가워요`,null,null,true);
+  if(mode==="owner")await syncOnLogin();
+  const job=pendingAfterLogin;pendingAfterLogin=null;if(job)job()}
+$("#authForm").addEventListener("submit",async e=>{e.preventDefault();const btn=$("#aSubmit");btn.disabled=true;$("#aErr").textContent="";
+  try{const em=$("#aEmail").value.trim(),pw=$("#aPw").value;
+    const u=authMode==="up"?await cloud.signUp(em,pw,$("#aName").value.trim()):await cloud.signIn(em,pw);await afterLogin(u)}
+  catch(err){$("#aErr").textContent=errMsg(err)}finally{btn.disabled=false}});
+$("#aGoogle").onclick=async()=>{$("#aErr").textContent="";try{const u=await cloud.google();if(u)await afterLogin(u)}catch(err){$("#aErr").textContent=errMsg(err)}};
+$("#aReset").onclick=async()=>{const em=$("#aEmail").value.trim();if(!em){$("#aErr").textContent="비밀번호를 바꿀 이메일을 먼저 입력해 주세요.";return}
+  try{await cloud.reset(em);$("#aErr").textContent="비밀번호를 바꾸는 메일을 보냈어요. 메일함을 확인해 주세요."}catch(err){$("#aErr").textContent=errMsg(err)}};
+$("#acctBtn").onclick=()=>{if(!me){openAuth();return}$("#acTitle").textContent=`${me.name}님`;$("#acMail").textContent=me.email;$("#acctModal").hidden=false};
+$("#acClose").onclick=()=>$("#acctModal").hidden=true;
+$("#acOut").onclick=async()=>{$("#acctModal").hidden=true;try{await cloud.signOut()}catch(e){}me=null;syncedUid=null;renderAccount();toast("로그아웃했어요. 박스들은 이 기기에도 그대로 남아 있어요")};
+
+/* ---------- the shelf (보관함): make, open, bring in, remove boxes ---------- */
+function resetDeck(){try{if(ytReady)player.stopVideo()}catch(e){}
+  playingId=null;isPlaying=false;dur=0;cur=0;rec.classList.add("off");setCover(null);setArm(ARM.rest);$("#err").hidden=true}
+function replayBox(){opened=false;world.classList.remove("open");world.classList.add("intro");layoutCrate();setTimeout(openBox,reduced()?0:380)}
+function showBox(b){resetDeck();data=b;mode="owner";applyStyle();refreshAll();renderDesign();replayBox();renderShelfBtn();watchCurrent()}
+function switchBox(lid){if(!shelf.boxes[lid])return;if(data&&mode==="owner")shelf.boxes[data.lid]=data;shelf.cur=lid;persistShelf();
+  if(location.search)history.replaceState(null,"",location.pathname);
+  showBox(shelf.boxes[lid]);setSync(me?(data.cloudId?"계정에 저장됨":"저장하는 중…"):"");if(me&&!data.cloudId)pushNow()}
+function addBox(d){d=normalize(d);d.sv=4;d.lid=uid();d.ts=d.ts||Date.now();shelf.boxes[d.lid]=d;shelf.order.unshift(d.lid);persistShelf();return d}
+const emptyBox=()=>({title:"새 박스",by:(me&&me.name)||(data&&!data.linked&&data.by)||"",intro:"",blocks:[],stickers:[],tagOff:false,style:DEF_STYLE(),tracks:[]});
+/* a copy of someone's box: their design, records, stickers and links, now mine to change */
+function copyOf(src,srcId){const d=JSON.parse(JSON.stringify(src));delete d.cloudId;delete d.lid;delete d.ts;delete d.linked;delete d.base;delete d.extra;delete d.hidden;delete d.gone;
+  d.from={by:String(src.by||""),title:String(src.title||""),src:srcId||""};d.tracks.forEach(t=>t.id=uid());return d}
+/* a followed copy: stays the creator's box (design, title, stickers, songs), I can only add songs or hide theirs */
+function linkOf(src,srcId){const d=copyOf(src,srcId);d.linked=srcId;d.base=JSON.parse(JSON.stringify(src.tracks));d.extra=[];d.hidden=[];return relink(d)}
+const CREATOR_KEYS=["title","by","intro","blocks","stickers","style","tagOff"];
+function applyCreator(L,src){let s;try{s=normalize(JSON.parse(src.json))}catch(e){return false}if(s.linked)return false;
+  const snap=()=>JSON.stringify([CREATOR_KEYS.map(k=>L[k]),L.base,L.gone]),before=snap();
+  CREATOR_KEYS.forEach(k=>L[k]=s[k]);L.base=s.tracks;L.gone=false;L.from={by:String(s.by||"").slice(0,40),title:String(s.title||"").slice(0,80),src:L.linked};relink(L);
+  return before!==snap()}
+/* the creator's box changed (or vanished): update my copy, repaint if it's on screen */
+function onCreator(L,r){if(shelf.boxes[L.lid]!==L)return;
+  const changed=r?applyCreator(L,r):(L.gone?false:(L.gone=true));
+  if(!changed)return;persistShelf();
+  if(L===data&&mode==="owner"){applyStyle();refreshAll();renderDesign()}
+  else{renderMinis();if(!$("#libModal").hidden)renderShelf()}}
+async function refreshLinked(L){if(!cloud||!L||!L.linked)return;try{onCreator(L,await cloud.getBox(L.linked))}catch(e){}}
+let unwatch=null;
+function watchCurrent(){if(unwatch){try{unwatch()}catch(e){}unwatch=null}
+  const L=data;if(!cloud||mode!=="owner"||!L||!L.linked)return;
+  if(cloud.watchBox)unwatch=cloud.watchBox(L.linked,r=>onCreator(L,r));else refreshLinked(L)}
+function refreshAllLinked(){if(!cloud||mode!=="owner")return;shelf.order.forEach(l=>{const b=shelf.boxes[l];if(b.linked&&b!==data)refreshLinked(b)});watchCurrent()}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&cloud&&!cloud.watchBox&&data&&data.linked&&mode==="owner")refreshLinked(data)});
+/* a ?b= doc may itself be a followed box: open the creator's original instead */
+async function fetchSource(id){let r=await cloud.getBox(id);if(!r)return null;
+  try{const j=JSON.parse(r.json);if(j&&j.linked){const o=await cloud.getBox(j.linked);if(o)r=o}}catch(e){}return r}
+const whoOf=L=>{const n=L.by||(L.from&&L.from.by);return n?n+"님":"만든 사람"};
+function linkedUI(){const L=data&&mode==="owner"&&data.linked?data:null;document.body.classList.toggle("linked",!!L);
+  $("#mgrH").textContent=L?"곡 더하기":"내 박스 꾸미기";if(!L)return;
+  const who=whoOf(L);
+  $("#linkNote").innerHTML=(L.gone?`<div><b>만든 사람이 이 박스를 지웠어요</b>마지막으로 본 모습 그대로 남아 있어요. 내가 더한 곡은 계속 고칠 수 있어요.</div>`:
+    `<div><b>${esc(who)}의 박스를 가져왔어요</b>박스 이름·디자인·스티커·소개는 ${esc(who)}이 꾸민 그대로 보이고, ${esc(who)}이 고치면 여기에도 바로 바뀌어요. 나는 곡을 더하거나, ${esc(who)}의 곡을 내 목록에서 숨길 수 있어요.</div>`)+
+    `<div class="row"><button class="btn sm" type="button" id="forkBtn">복사해서 내 박스로 만들기</button></div>`;
+  $("#forkBtn").onclick=()=>{const d=addBox(copyOf(data,data.linked));shelf.order.splice(shelf.order.indexOf(d.lid),1);shelf.order.splice(shelf.order.indexOf(shelf.cur)+1,0,d.lid);persistShelf();
+    slideTo(d.lid,1).then(()=>toast("복사본을 만들었어요. 이 박스는 내 것이라 디자인까지 마음대로 고칠 수 있어요"))}}
+function renderShelfBtn(){$("#listBtn").setAttribute("aria-label",`보관함 목록 (박스 ${shelf.order.length}개)`);renderDots()}
+/* a closed copy of another box, parked beside the open one */
+function miniHTML(b,side,lid){
+  const {W}=geo,off=Math.min(stage.clientWidth/2-W*.12,W*1.28),ghost=!b;
+  const tf=`translate3d(${side*off}px,0,${-Math.round(W*.35)}px) rotateX(-20deg) rotateY(${-side*30}deg) scale(.62)`;
+  const front=ghost?`<div class="face front">+ 새 박스</div>`:
+    `<div class="face front"><div class="tag${b.tagOff?" off":""}"><b>${esc(b.title||"LP BOX")}</b><span>${b.tracks.length} RECORDS</span></div><div class="stks">${b.stickers.map((x,i)=>stkHTML(x,i)).join("")}</div></div>`;
+  return `<div class="world mini-w${ghost?" ghost":""}" data-lid="${lid||""}" data-side="${side}" style="--box:${ghost?"transparent":b.style.box};transform:${tf}" role="button" aria-label="${ghost?"새 박스 만들기":esc(b.title||"박스")+" 열기"}">
+    <div class="face bottom"></div><div class="face back"></div><div class="face left"></div><div class="face right"></div>${front}
+    <div class="flap l"></div><div class="flap r"></div><div class="flap f"></div><div class="flap b"></div></div>`}
+function renderMinis(){
+  const box=$("#minis");if(mode!=="owner"||!shelf){box.innerHTML="";return}
+  const i=shelf.order.indexOf(shelf.cur),prev=shelf.order[i-1],next=shelf.order[i+1];
+  box.innerHTML=(prev?miniHTML(shelf.boxes[prev],-1,prev):"")+(next?miniHTML(shelf.boxes[next],1,next):miniHTML(null,1,""));
+  $("#boxPrev").hidden=!prev;$("#boxNext").hidden=false;$("#boxNext").setAttribute("aria-label",next?"다음 박스":"새 박스 만들기");
+  renderDots();
+}
+function renderDots(){const el=$("#boxDots");if(!shelf||mode!=="owner"){el.innerHTML="";return}
+  const n=shelf.order.length,i=shelf.order.indexOf(shelf.cur);if(n<2){el.innerHTML="";return}
+  const from=Math.max(0,Math.min(i-4,n-9)),to=Math.min(n,from+9);
+  el.innerHTML=(from>0?`<span class="more">+${from}</span>`:"")+shelf.order.slice(from,to).map((lid,k)=>`<button type="button" data-lid="${lid}" aria-label="${esc(shelf.boxes[lid].title||"박스")}" aria-current="${from+k===i}"></button>`).join("")+(to<n?`<span class="more">+${n-to}</span>`:"")}
+let sliding=false;
+async function slideTo(lid,dir){
+  if(sliding||lid===shelf.cur||!shelf.boxes[lid])return;sliding=true;const car=$("#carousel");
+  try{if(!reduced())await car.animate([{transform:"translateX(0)"},{transform:`translateX(${-dir*70}%)`}],{duration:260,easing:"cubic-bezier(.5,0,.8,.4)",fill:"forwards"}).finished.catch(()=>{});
+    switchBox(lid);
+    if(!reduced())await car.animate([{transform:`translateX(${dir*70}%)`},{transform:"translateX(0)"}],{duration:420,easing:"cubic-bezier(.2,.75,.2,1)"}).finished.catch(()=>{})}
+  finally{car.getAnimations().forEach(a=>a.cancel());sliding=false}}
+function bounce(dir){if(reduced())return;$("#carousel").animate([{transform:"translateX(0)"},{transform:`translateX(${-dir*18}px)`},{transform:"translateX(0)"}],{duration:300,easing:"ease-out"})}
+function boxStep(dir){if(mode!=="owner")return;const i=shelf.order.indexOf(shelf.cur),lid=shelf.order[i+dir];
+  if(lid)slideTo(lid,dir);else bounce(dir)}
+function newBoxSlide(){if(sliding)return;const d=addBox(emptyBox());shelf.order.splice(shelf.order.indexOf(d.lid),1);
+  shelf.order.splice(shelf.order.indexOf(shelf.cur)+1,0,d.lid);persistShelf();     // new box goes right after the one on screen
+  slideTo(d.lid,1).then(()=>toast("새 박스를 만들었어요. 유튜브 링크로 레코드를 넣어 보세요"))}
+$("#minis").addEventListener("click",e=>{if(Date.now()-justSwiped<350)return;const m=e.target.closest(".mini-w");if(!m)return;
+  if(m.classList.contains("ghost"))newBoxSlide();else slideTo(m.dataset.lid,+m.dataset.side)});
+$("#boxPrev").onclick=()=>boxStep(-1);
+$("#boxNext").onclick=()=>{const i=shelf.order.indexOf(shelf.cur);if(shelf.order[i+1])boxStep(1);else newBoxSlide()};
+$("#boxDots").addEventListener("click",e=>{const b=e.target.closest("button[data-lid]");if(!b)return;const to=shelf.order.indexOf(b.dataset.lid),from=shelf.order.indexOf(shelf.cur);if(to!==from)slideTo(b.dataset.lid,to>from?1:-1)});
+function renderShelf(){
+  const L=$("#libList");
+  L.innerHTML=shelf.order.map(lid=>{const b=shelf.boxes[lid],st=b.style,isCur=lid===shelf.cur;
+    const meta=[`${b.tracks.length}곡`,b.linked?`${b.by?esc(b.by)+"님 박스":"가져온 박스"} · ${b.gone?"원본이 지워짐":"만든 사람과 연결됨"}`:b.from?`${b.from.by?esc(b.from.by)+"님 ":""}박스에서 가져온 복사본`:"",isCur?"지금 보는 박스":""].filter(Boolean).join(" · ");
+    return `<li data-lid="${lid}" class="${isCur?"cur":""}"><button class="pick" type="button" data-open aria-label="${esc(b.title||"이름 없는 박스")} 열기">
+      <span class="shelfsw" style="background:${st.bg}"><i style="background:${st.vinyl}"></i><i style="background:${st.box}"></i></span>
+      <div><b>${esc(b.title||"이름 없는 박스")}</b><span>${meta}</span></div></button>
+      <button class="sq" type="button" data-del aria-label="${esc(b.title||"박스")} 지우기">✕</button></li>`}).join("");
+  $("#lbHint").textContent=cloud&&!me?"로그인하면 보관함의 박스들이 계정에 저장돼서 다른 기기에서도 볼 수 있어요.":cloud&&me?"보관함은 계정에 자동으로 저장돼요.":"보관함은 이 기기의 브라우저에 저장돼요.";
+}
+function openLib(){if(mode!=="owner"){location.href=siteBase()+"#lib";return}
+  $("#impErr").textContent="";$("#impUrl").value="";renderShelf();$("#libModal").hidden=false}
+$("#listBtn").onclick=openLib;$("#lbClose").onclick=()=>$("#libModal").hidden=true;
+$("#newBoxBtn").onclick=()=>{const d=addBox(emptyBox());switchBox(d.lid);$("#libModal").hidden=true;$(".crate-sec").scrollIntoView({behavior:reduced()?"auto":"smooth",block:"start"});
+  toast("새 박스를 만들었어요. 유튜브 링크로 레코드를 넣어 보세요");setTimeout(()=>{$("#addForm").scrollIntoView({behavior:reduced()?"auto":"smooth",block:"center"});$("#inUrl").focus({preventScroll:true})},500)};
+$("#libList").addEventListener("click",async e=>{const li=e.target.closest("li[data-lid]");if(!li)return;const lid=li.dataset.lid;
+  if(e.target.closest("[data-open]")){if(lid!==shelf.cur)switchBox(lid);$("#libModal").hidden=true;return}
+  if(e.target.closest("[data-del]")){
+    const b=shelf.boxes[lid],at=shelf.order.indexOf(lid);
+    shelf.order.splice(at,1);delete shelf.boxes[lid];
+    if(!shelf.order.length){const d=addBox(emptyBox());shelf.cur=d.lid}
+    if(lid===shelf.cur||!shelf.boxes[shelf.cur]){shelf.cur=shelf.order[0];showBox(shelf.boxes[shelf.cur])}
+    persistShelf();renderShelf();renderShelfBtn();
+    if(cloud&&me&&b.cloudId){try{await cloud.deleteBox(b.cloudId)}catch(err){}}
+    toast(`'${b.title||"이름 없는 박스"}' 박스를 지웠어요`,"되돌리기",async()=>{shelf.boxes[lid]=b;shelf.order.splice(at,0,lid);persistShelf();renderShelfBtn();
+      if(!$("#libModal").hidden)renderShelf();if(cloud&&me&&b.cloudId)await pushBox(b)})}});
+/* bring a box in from a pasted link (?b= account box, #p= / #e= link box) */
+async function boxFromLink(text){
+  const t=String(text||"").trim(),bm=t.match(/[?#&]b=([a-z0-9]{6,16})/),pm=t.match(/[?#&][pe]=([\w-]+)/);
+  if(bm){if(!cloud)throw new Error("계정 기능이 켜진 사이트에서만 이 링크를 가져올 수 있어요.");
+    const src=await fetchSource(bm[1]);if(!src)throw new Error("박스를 찾을 수 없어요. 지워졌거나 링크가 잘렸을 수 있어요.");
+    return{box:normalize(JSON.parse(src.json)),id:src.id,mine:!!(me&&src.owner===me.uid)}}
+  if(pm){try{return{box:await decodeBox(pm[1]),id:""}}catch(e){throw new Error("링크를 읽지 못했어요. 링크가 잘리지 않았는지 확인해 주세요.")}}
+  if(/^https?:\/\//.test(t)&&/is\.gd|v\.gd|da\.gd/.test(t))throw new Error("짧은 주소는 먼저 열어 본 다음, 주소창의 링크를 복사해서 붙여넣어 주세요.");
+  throw new Error("LP BOX 공유 링크를 붙여넣어 주세요.");
+}
+$("#impForm").addEventListener("submit",async e=>{e.preventDefault();const go=$("#impGo"),err=$("#impErr");err.textContent="";go.disabled=true;
+  try{const r=await boxFromLink($("#impUrl").value);
+    if(r.mine){const lid=shelf.order.find(l=>shelf.boxes[l].cloudId===r.id);if(lid){switchBox(lid);$("#libModal").hidden=true;toast("내 박스라서 그 박스를 열었어요");return}}
+    const dup=r.id&&shelf.order.find(l=>shelf.boxes[l].linked===r.id);
+    if(dup){switchBox(dup);$("#libModal").hidden=true;toast("이미 가져온 박스라서 그 박스를 열었어요");return}
+    const d=addBox(r.id?linkOf(r.box,r.id):copyOf(r.box,""));switchBox(d.lid);$("#libModal").hidden=true;
+    toast(r.id?`'${d.title||"이름 없는 박스"}' 박스를 가져왔어요. 만든 사람이 고치면 여기에도 바로 반영돼요`:`'${d.title||"이름 없는 박스"}' 박스를 복사본으로 가져왔어요. 계정 링크가 아니라서 마음대로 고칠 수 있는 내 박스가 됐어요`)}
+  catch(x){err.textContent=x.message||errMsg(x)}finally{go.disabled=false}});
+/* "플리 가져오기" on a box someone sent */
+$("#importBtn").onclick=()=>{
+  if(preview){toast("미리보기에서는 가져올 수 없어요. 받은 사람은 이 버튼으로 박스를 가져가요",null,null,true);return}
+  const dup=sharedBoxId&&shelf.order.find(l=>shelf.boxes[l].linked===sharedBoxId);
+  if(dup){shelf.cur=dup;persistShelf();location.href=siteBase()+"#got=dup";return}
+  const d=addBox(sharedBoxId?linkOf(data,sharedBoxId):copyOf(data,""));shelf.cur=d.lid;persistShelf();
+  location.href=siteBase()+(sharedBoxId?"#got=1":"#got=copy");
+};
+["#authModal","#acctModal","#libModal"].forEach(id=>$(id).addEventListener("click",e=>{if(e.target.id===id.slice(1)){$(id).hidden=true;if(id==="#authModal")pendingAfterLogin=null}}));
+addEventListener("keydown",e=>{if(e.key==="Escape")["#authModal","#acctModal","#libModal"].forEach(id=>$(id).hidden=true)});
+async function startCloud(){
+  try{cloud=await Promise.race([window.__cloud,new Promise((_,no)=>setTimeout(()=>no(new Error("timeout")),12000))])}
+  catch(e){cloud=null;const c=String(e&&(e.code||e.message)||"");
+    cloudErr=/invalid-api-key|api-key-not-valid/i.test(c)?"로그인 버튼이 꺼져 있어요. apiKey 값이 맞지 않아요. Firebase 콘솔에서 다시 복사해 붙여넣어 주세요."
+      :/timeout/.test(c)?"로그인 기능을 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침해 주세요."
+      :`로그인 기능을 불러오지 못했어요. index.html 맨 위 설정값을 확인해 주세요. (${c.slice(0,60)})`;
+    if(mode==="owner")setSync(cloudErr,true);return null}
+  if(!cloud)return null;
+  me=cloud.user();
+  cloud.onUser(u=>{me=u;if(!u)syncedUid=null;renderAccount();if(u&&mode==="owner")syncOnLogin()});
+  return cloud;
+}
+
+/* ---------- boot ---------- */
+async function boot(){
+  const ls=loadShelf();shelf=ls.shelf;localIsSample=ls.fresh;
+  const loc=location.search+"&"+location.hash;
+  const m=loc.match(/[?#&]p=([\w-]+)/),em=loc.match(/[?#&]e=([\w-]+)/),bm=loc.match(/[?#&]b=([a-z0-9]{6,16})/),got=loc.match(/[#&]got=(\w+)/);
+  preview=/[?#&]pv=1/.test(loc);
+  /* ?b=<id>: a box stored in someone's account (short, always up to date) */
+  if(bm){
+    await startCloud();
+    if(!cloud)toast("이 박스를 열려면 사이트에 계정 기능이 설정돼 있어야 해요.",null,null,true);
+    else{try{const r=await fetchSource(bm[1]);
+      if(!r)toast("박스를 찾을 수 없어요. 링크가 맞는지 확인해 주세요.",null,null,true);
+      else if(me&&r.owner===me.uid){   // my own link: open it for editing
+        let lid=shelf.order.find(l=>shelf.boxes[l].cloudId===r.id);
+        if(lid){if((r.ts||0)>(shelf.boxes[lid].ts||0))shelf.boxes[lid]=fromCloudDoc(r,lid,shelf.boxes[lid])}else{const d=fromCloudDoc(r);shelf.boxes[d.lid]=d;shelf.order.unshift(d.lid);lid=d.lid}
+        shelf.cur=lid;persistShelf();localIsSample=false}
+      else{data=normalize(JSON.parse(r.json));mode="shared";sharedBoxId=r.id}}
+      catch(e){toast(errMsg(e),null,null,true)}}
+  }
+  if(m){try{data=await decodeBox(m[1]);mode="shared"}catch(e){toast("공유 링크를 읽지 못했어요. 링크가 잘리지 않았는지 확인해 주세요",null,null,true)}}
+  if(em){history.replaceState(null,"",location.pathname);   // edit link: that box joins this device's shelf
+    try{const d=addBox(await decodeBox(em[1]));shelf.cur=d.lid;persistShelf();localIsSample=false;setTimeout(()=>toast("편집용 링크의 박스를 보관함에 넣었어요"),400)}
+    catch(e){toast("편집용 링크를 읽지 못했어요. 링크가 잘리지 않았는지 확인해 주세요",null,null,true)}}
+  if(!data){data=shelf.boxes[shelf.cur];mode="owner"}
+  if(got){history.replaceState(null,"",location.pathname);localIsSample=false;
+    setTimeout(()=>toast(got[1]==="dup"?"이미 가져온 박스라서 그 박스를 열었어요":got[1]==="copy"?`'${data.title||"이름 없는 박스"}' 박스를 복사본으로 가져왔어요. 마음대로 고칠 수 있는 내 박스예요`:`'${data.title||"이름 없는 박스"}' 박스를 가져왔어요. 만든 사람이 고치면 여기에도 바로 반영돼요`,"보관함 보기",openLib),500)}
+  applyStyle();
+  document.body.classList.toggle("shared",mode==="shared");
+  refreshAll();renderDesign();renderShelfBtn();
+  if(!bm)await startCloud();
+  renderAccount();
+  if(cloud&&me&&mode==="owner")syncOnLogin();
+  refreshAllLinked();
+  if(/[#&]lib\b/.test(location.hash)&&mode==="owner"){history.replaceState(null,"",location.pathname);openLib()}
+  /* open the box when it scrolls into view, so phone viewers don't miss it */
+  const io=new IntersectionObserver(en=>{if(en.some(x=>x.isIntersecting)){io.disconnect();setTimeout(openBox,reduced()?0:450)}},{threshold:.45});
+  setTimeout(()=>io.observe(stage),200);
+}
+addEventListener("hashchange",()=>{if(/^#lib$/.test(location.hash)&&mode==="owner"){history.replaceState(null,"",location.pathname);openLib();return}location.reload()});
+let rz;addEventListener("resize",()=>{clearTimeout(rz);rz=setTimeout(()=>{measure();layoutCrate();renderMinis();if(!$("#pv").hidden)layoutPreview()},120)});
+boot();
+</script>
+</body>
+</html>
